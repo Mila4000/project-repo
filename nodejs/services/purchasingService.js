@@ -1,4 +1,4 @@
-// services/purchasingService.js
+
 import { supabase } from "../config/supabaseClient.js";
 
 export const getAllPurchases = async () => {

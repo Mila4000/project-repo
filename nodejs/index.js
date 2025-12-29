@@ -2,6 +2,7 @@ import "./config/env.js";
 import express from "express";
 import cors from "cors";
 import purchasingRouter from "./routes/purchasing.js";
+import supplierRouter from "./routes/supplier.js";
 
 
 const app = express();
@@ -15,6 +16,7 @@ app.get("/", (req, res) => {
 });
 
 app.use("/api/purchasing", purchasingRouter);
+app.use("/api/supplier", supplierRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

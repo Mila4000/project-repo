@@ -1,4 +1,4 @@
-// controllers/purchasingController.js
+
 import * as purchasingService from "../services/purchasingService.js";
 
 export const getAllPurchases = async (req, res) => {

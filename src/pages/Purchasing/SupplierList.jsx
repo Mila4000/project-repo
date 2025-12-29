@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 
 import SupplierStatsGrid from './SupplierStatsGrid';
 import SupplierListTable from './SupplierListTable';
@@ -11,64 +11,49 @@ import EditSupplierListModal from '../../components/modals/EditSupplierListModal
 
 const ALL_OPTION = 'All';
 
-const SuppliersData = [
-  {
-    Name: 'Sarah Trinidad',
-    businessName: "Sarah's Karnehan",
-    Address: 'Valenzuela',
-    Email: 'sarah.t@gmail.com',
-    ContactNo: '09123456789',
-    tinNo: '123456789',
-    BankAcc: '123-456-789',
-    Status: 'Active',
-  },
-  {
-    Name: 'Javier Pehipol',
-    businessName: "Pata Slayer",
-    Address: 'BB Paz Street',
-    Email: 'jppehipol@gmail.com',
-    ContactNo: '09123456789',
-    tinNo: '123456789',
-    BankAcc: '123-456-789',
-    Status: 'Active',
-  },
-  {
-    Name: 'John Doe',
-    businessName: "Kimetsu no Karne",
-    Address: '123 Zone A, Cityville',
-    Email: 'muzankibu@gmail.com',
-    ContactNo: '09123456789',
-    tinNo: '123456789',
-    BankAcc: '123-456-789',
-    Status: 'Active',
-  },
-  {
-    Name: 'Richard Dela Cruz',
-    businessName: "DC Meat Supply",
-    Address: 'Cavite',
-    Email: 'r.delacruz@dcmeat.ph',
-    ContactNo: '09989012345',
-    tinNo: '001122334',
-    BankAcc: '001-122-334',
-    Status: 'Active',
-  },
-];
-
 function SupplierList() {
   const iconProps = {
     className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
   };
+  const [stats,setStats] = useState([]);
+  const [suppliers,setSuppliers] = useState([]);
 
+  useEffect(() => {
+      const fetchSuppliers = async () => {
+          try {
+          const response = await fetch("http://localhost:5000/api/supplier");
+          const data = await response.json();
+          setSuppliers(data);
+          } catch (err) {
+          console.error("Failed to fetch suppliers", err);
+          }
+      };
+  
+      fetchSuppliers();
+      }, []);
+  useEffect(() => {
+      const fetchSupplierStats = async () => {
+          try {
+          const response = await fetch("http://localhost:5000/api/supplier/stats");
+          const data = await response.json();
+          setStats(data);
+          } catch (err) {
+          console.error("Failed to fetch suppliers", err);
+          }
+      };
+  
+      fetchSupplierStats();
+      }, []);
   // --- OPTION GENERATION ---
   const extractUniqueOptions = (key, placeholder) => {
-    const uniqueValues = [...new Set(SuppliersData.map(supplier => supplier[key]))];
+    const uniqueValues = [...new Set(suppliers.map(supplier => supplier[key]))];
     return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
   };
-
+  
   const rowLimitOptions = [5, 10, 15]; 
-  const nameOptions = extractUniqueOptions('Name', 'Name');
-  const businessNameOptions = extractUniqueOptions('businessName', 'Business Name');
-  const statusOptions = extractUniqueOptions('Status', 'Status');
+  const nameOptions = extractUniqueOptions('name', 'Name');
+  const businessNameOptions = extractUniqueOptions('businessname', 'Business Name');
+  const statusOptions = extractUniqueOptions('status', 'Status');
 
   const initialRowLimit = rowLimitOptions[0];
   const initialName = nameOptions[0];
@@ -94,8 +79,8 @@ function SupplierList() {
   };
 
   // Edit Handlers
-  const handleOpenEditModal = (supplier) => {
-    setSupplierToEdit(supplier);
+  const handleOpenEditModal = (supplierData) => {
+    setSupplierToEdit(supplierData);
     setIsEditModalOpen(true);
   };
 
@@ -103,16 +88,66 @@ function SupplierList() {
     setIsEditModalOpen(false);
     setSupplierToEdit(null);
   };
-
-  const handleSaveEdit = (updatedSupplier) => {
-    console.log("Updated Supplier Data:", updatedSupplier);
-    // Here you would typically update your database or global state
-    handleCloseEditModal();
+  // Save Edited Supplier
+  const handleSaveEdit = async (updatedSupplier) => {
+    console.log("Updated Supplier:", updatedSupplier); // For debugging
+    const id = updatedSupplier.id;
+    try{
+      const response = await fetch(`http://localhost:5000/api/supplier/${id}`, {
+          method: "PUT",
+          headers: {
+              "Content-Type": "application/json",
+          },
+          body: JSON.stringify(updatedSupplier),
+      });
+      if (!response.ok) {
+          throw new Error("Network response was not ok");
+      }
+      const savedSupplier = await response.json();
+      setSuppliers(prevSuppliers => prevSuppliers.map(s => s.id === savedSupplier.id ? savedSupplier : s));
+      handleCloseEditModal();
+    }
+    catch(error){
+      console.error("Failed to update supplier", error);
+    }
   };
+
+  //Delete Handler
+  // --- DELETE HANDLER ---
+  const handleDeleteSupplier = async (id) => {
+      if (!confirm("Delete this supplier?")) return;
+
+      try {
+          const res = await fetch(
+          `http://localhost:5000/api/supplier/${id}`,
+          { method: "DELETE" }
+          );
+
+          if (!res.ok) throw new Error("Delete failed");
+
+          // ✅ REFRESH DATA
+          await fetchSuppliers();
+      } catch (err) {
+          console.error(err);
+      }
+  };
+  //Refresh Data
+  const fetchSuppliers= async () => {
+          const res = await fetch("http://localhost:5000/api/supplier");
+          const data = await res.json();
+          setSuppliers(data);
+      };
+      useEffect(() => {
+          fetchSuppliers();
+      }, []);
+  // Add Supplier Handler
+  const handleAddSupplier = (newSupplier) => {
+    setSuppliers(prevSuppliers => [...prevSuppliers, newSupplier]);
+  }
 
   // --- FILTERING LOGIC ---
   const filteredSuppliers = useMemo(() => {
-    let filtered = SuppliersData;
+    let filtered = suppliers; 
 
     if (nameFilter !== initialName && nameFilter !== ALL_OPTION) {
       filtered = filtered.filter(s => s.Name === nameFilter);
@@ -125,7 +160,7 @@ function SupplierList() {
     }
 
     return filtered;
-  }, [nameFilter, businessNameFilter, statusFilter, initialName, initialBusinessName, initialStatus]); 
+  }, [suppliers,nameFilter, businessNameFilter, statusFilter, initialName, initialBusinessName, initialStatus]); 
 
   // --- PAGINATION LOGIC ---
   const totalPages = Math.ceil(filteredSuppliers.length / rowLimit);
@@ -136,7 +171,7 @@ function SupplierList() {
 
   return (
     <div>
-      <SupplierStatsGrid/>
+      <SupplierStatsGrid stats={stats} />
       <div className="bg-white/80 space-y-5 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl py-4 px-5 border border-slate-200/50 dark:border-slate-700/50">
 
         <SupplierListTableHeader
@@ -157,8 +192,9 @@ function SupplierList() {
         />
 
         <SupplierListTable 
-            orders={paginatedSuppliers} 
+            suppliers={paginatedSuppliers} 
             onEdit={handleOpenEditModal} 
+            onDelete={handleDeleteSupplier}
         />
 
         <div className="flex items-center justify-between mb-3">
@@ -180,6 +216,7 @@ function SupplierList() {
       <AddSupplierModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
+        onAddSupplier={handleAddSupplier}
       />
 
       <EditSupplierListModal 
