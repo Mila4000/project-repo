@@ -2,7 +2,7 @@
   {
     "PO": "PO-123142",
     "supplier": "Javier Meats",
-    "transactionDate": "Dec 27, 2025",
+    "transaction_date": "Dec 27, 2025",
     "deliveryDate": "",
     "total": "1.00",
     "approvalStatus": "Pending",

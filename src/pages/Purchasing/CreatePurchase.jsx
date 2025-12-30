@@ -10,274 +10,301 @@ import EditPurchaseOrderModal from '../../components/modals/EditPurchaseOrderMod
 
 const ALL_OPTION = 'All';
 
-// --- DATA SOURCE (Keeping your original data) ---
 
 
 // --- DATE HELPER FUNCTIONS ---
-const parseDate = (dateString) => {
-    return new Date(dateString); 
-};
+const parseDate = (dateString) => new Date(dateString);
 
 const isDateInRange = (transactionDateString, startDate, endDate) => {
     const transactionDate = parseDate(transactionDateString);
+    transactionDate.setHours(0, 0, 0, 0);
 
-    transactionDate.setHours(0, 0, 0, 0); 
-    startDate.setHours(0, 0, 0, 0); 
-    endDate.setHours(23, 59, 59, 999); 
+    const start = new Date(startDate);
+    start.setHours(0, 0, 0, 0);
 
-    return transactionDate >= startDate && transactionDate <= endDate;
+    const end = new Date(endDate);
+    end.setHours(23, 59, 59, 999);
+
+    return transactionDate >= start && transactionDate <= end;
 };
 
 function CreatePurchase() {
     const [stats, setStats] = useState(null);
+    const [orders, setOrders] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [orderToEdit, setOrderToEdit] = useState(null);
+
+    const [currentPage, setCurrentPage] = useState(1);
+
+    /* =======================
+    ICON PROPS
+    ======================= */
 
     const iconProps = {
-        className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
+    className: "w-4 h-4 text-slate-500 dark:text-slate-500",
     };
-    useEffect(() => {
+
+    /* =======================
+    FETCHERS
+    ======================= */
+
     const fetchStats = async () => {
-        try {
-        const response = await fetch(
-            "http://localhost:5000/api/purchasing/stats"
-        );
-        const data = await response.json();
+    try {
+        const res = await fetch("http://localhost:5000/api/purchasing/stats");
+        const data = await res.json();
         setStats(data);
-        } catch (error) {
-        console.error("Failed to fetch purchase stats", error);
-        }
+    } catch (err) {
+        console.error("Failed to fetch purchase stats", err);
+    }
     };
 
-    fetchStats();
-    }, []);
-    const [orders, setOrders] = useState([]);
-
-    useEffect(() => {
-    const fetchOrders = async () => {
-        try {
-        const response = await fetch("http://localhost:5000/api/purchasing");
-        const data = await response.json();
+    const fetchPurchases = async () => {
+    try {
+        const res = await fetch("http://localhost:5000/api/purchasing");
+        const data = await res.json();
         setOrders(data);
-        } catch (err) {
+        console.log("Fetched purchases:", data);
+    } catch (err) {
         console.error("Failed to fetch purchased orders", err);
-        }
+    }
     };
 
-    fetchOrders();
-    }, []);
-    // --- ADD MODAL STATE ---
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const fetchSuppliers = async () => {
+    try {
+        const res = await fetch("http://localhost:5000/api/supplier");
+        const data = await res.json();
+        setSuppliers(data);
+    } catch (err) {
+        console.error("Failed to fetch suppliers", err);
+    }
+    };
+
+    /* =======================
+    MODAL HANDLERS
+    ======================= */
+
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
 
-    // --- EDIT MODAL STATE ---
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [orderToEdit, setOrderToEdit] = useState(null); 
-
-    // --- DYNAMIC OPTION GENERATION ---
-    const extractUniqueOptions = (key, placeholder) => {
-        const uniqueValues = [...new Set(orders.map(order => order[key]))];
-        return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
-    };
-
-    const rowLimitOptions = [5, 10, 15]; 
-    const dateRangeOptions = ['Date Range', ALL_OPTION, 'Today', 'Last 7 Days', 'Last 30 Days'];
-
-    const supplierOptions = extractUniqueOptions('supplier', 'Supplier');
-    const deliveryOptions = extractUniqueOptions('deliveryStatus', 'Delivery Status');
-    const paymentOptions = extractUniqueOptions('paymentStatus', 'Payment Status');
-    const approvalOptions = extractUniqueOptions('approvalStatus', 'Approval Status'); // NEW OPTIONS
-
-    // Initial Placeholders
-    const initialRowLimit = rowLimitOptions[0];
-    const initialDateRange = dateRangeOptions[0];
-    const initialSupplier = supplierOptions[0];
-    const initialDeliveryStatus = deliveryOptions[0];
-    const initialPaymentStatus = paymentOptions[0];
-    const initialApprovalStatus = approvalOptions[0]; // NEW INITIAL STATE
-
-    // --- FILTER STATE MANAGEMENT ---
-    const [rowLimit, setRowLimit] = useState(initialRowLimit);
-    const [dateRangeFilter, setDateRangeFilter] = useState(initialDateRange);
-    const [supplierFilter, setSupplierFilter] = useState(initialSupplier);
-    const [deliveryStatusFilter, setDeliveryStatusFilter] = useState(initialDeliveryStatus);
-    const [paymentStatusFilter, setPaymentStatusFilter] = useState(initialPaymentStatus);
-    const [approvalStatusFilter, setApprovalStatusFilter] = useState(initialApprovalStatus); // NEW STATE
-    const [currentPage, setCurrentPage] = useState(1);
-
-    // --- HANDLER FUNCTIONS ---
-    const handleRowLimitChange = (newValue) => {
-        setRowLimit(parseInt(newValue));
-        setCurrentPage(1); 
-    };
-
-    const handleDateRangeChange = (newValue) => {
-        setDateRangeFilter(newValue);
-        setCurrentPage(1);
-    };
-
-    const handleSupplierChange = (newValue) => {
-        setSupplierFilter(newValue);
-        setCurrentPage(1);
-    };
-
-    const handleDeliveryChange = (newValue) => {
-        setDeliveryStatusFilter(newValue);
-        setCurrentPage(1);
-    };
-
-    const handlePaymentChange = (newValue) => {
-        setPaymentStatusFilter(newValue);
-        setCurrentPage(1);
-    };
-
-    const handleApprovalChange = (newValue) => { // NEW HANDLER
-        setApprovalStatusFilter(newValue);
-        setCurrentPage(1);
-    };
-
-    // --- EDIT HANDLER ---
-    const handleEdit = (orderData) => {
-        setOrderToEdit(orderData); 
-        setIsEditModalOpen(true); 
+    const handleEdit = (order) => {
+    setOrderToEdit(order);
+    setIsEditModalOpen(true);
     };
 
     const handleCloseEditModal = () => {
-        setIsEditModalOpen(false);
-        setOrderToEdit(null); 
+    setIsEditModalOpen(false);
+    setOrderToEdit(null);
     };
+
     const handleAddNewPurchase = (newPurchase) => {
-        setOrders(prev => [...prev, newPurchase]);
+    setOrders((prev) => [...prev, newPurchase]);
+    fetchPurchases();
+    fetchSuppliers();
+    fetchStats();
+    };
+
+    /* =======================
+    FILTER OPTIONS
+    ======================= */
+
+    const extractUniqueOptions = (key, placeholder) => {
+        const uniqueValues = [
+            ...new Set(
+                orders
+                    .map(o => key.split('.').reduce((acc, k) => acc?.[k], o))
+                    .filter(Boolean)
+            )
+        ];
+
+        return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
+    };
+
+    const rowLimitOptions = [5, 10, 15];
+    const dateRangeOptions = [
+    "Date Range",
+    ALL_OPTION,
+    "Today",
+    "Last 7 Days",
+    "Last 30 Days",
+    ];
+
+    const supplierOptions = extractUniqueOptions("supplier.businessname", "Supplier");
+    const deliveryOptions = extractUniqueOptions("delivery_status", "Delivery Status");
+    const paymentOptions = extractUniqueOptions("payment_status", "Payment Status");
+    const approvalOptions = extractUniqueOptions("approval_status", "Approval Status");
+
+    /* =======================
+    FILTER STATE
+    ======================= */
+
+    const [rowLimit, setRowLimit] = useState(rowLimitOptions[0]);
+    const [dateRangeFilter, setDateRangeFilter] = useState(dateRangeOptions[0]);
+    const [supplierFilter, setSupplierFilter] = useState(supplierOptions[0]);
+    const [deliveryStatusFilter, setDeliveryStatusFilter] = useState(deliveryOptions[0]);
+    const [paymentStatusFilter, setPaymentStatusFilter] = useState(paymentOptions[0]);
+    const [approvalStatusFilter, setApprovalStatusFilter] = useState(approvalOptions[0]);
+
+    /* =======================
+    FILTER HANDLERS
+    ======================= */
+
+    const resetPage = () => setCurrentPage(1);
+
+    const handleRowLimitChange = (value) => {
+    setRowLimit(parseInt(value));
+    resetPage();
+    };
+
+    const handleDateRangeChange = (value) => {
+    setDateRangeFilter(value);
+    resetPage();
+    };
+
+    const handleSupplierChange = (value) => {
+    setSupplierFilter(value);
+    resetPage();
+    };
+
+    const handleDeliveryChange = (value) => {
+    setDeliveryStatusFilter(value);
+    resetPage();
+    };
+
+    const handlePaymentChange = (value) => {
+    setPaymentStatusFilter(value);
+    resetPage();
+    };
+
+    const handleApprovalChange = (value) => {
+    setApprovalStatusFilter(value);
+    resetPage();
     };
     
+    /* =======================
+    FILTERING LOGIC
+    ======================= */
 
-    // --- FILTERING LOGIC ---
     const filteredOrders = useMemo(() => {
     let filtered = orders;
 
-    // 1. Date Range Filter
-    if (dateRangeFilter !== initialDateRange && dateRangeFilter !== ALL_OPTION) {
+    // Date Range
+    if (dateRangeFilter !== dateRangeOptions[0] && dateRangeFilter !== ALL_OPTION) {
         const today = new Date();
-        let startDate = new Date(0); 
+        let startDate = new Date(today);
 
-        switch (dateRangeFilter) {
-            case 'Today':
-            startDate = today; 
-            break;
-            case 'Last 7 Days':
-            startDate = new Date(today);
+        if (dateRangeFilter === "Last 7 Days") {
             startDate.setDate(today.getDate() - 7);
-            break;
-            case 'Last 30 Days':
-            startDate = new Date(today);
-            startDate.setDate(today.getDate() - 30);
-            break;
         }
 
-        filtered = filtered.filter(order => 
-            isDateInRange(order.transactionDate, startDate, today)
+        if (dateRangeFilter === "Last 30 Days") {
+            startDate.setDate(today.getDate() - 30);
+        }
+
+        filtered = filtered.filter(o =>
+            isDateInRange(o.transaction_date, startDate, today)
         );
     }
 
-    // 2. Supplier Filter
-    if (supplierFilter !== initialSupplier && supplierFilter !== ALL_OPTION) {
-        filtered = filtered.filter(order => order.supplier === supplierFilter);
+    if (supplierFilter !== supplierOptions[0] && supplierFilter !== ALL_OPTION) {
+        filtered = filtered.filter((o) => o.supplier?.businessname === supplierFilter);
     }
 
-    // 3. Approval Status Filter (NEW FILTER LOGIC)
-    if (approvalStatusFilter !== initialApprovalStatus && approvalStatusFilter !== ALL_OPTION) {
-        filtered = filtered.filter(order => order.approvalStatus === approvalStatusFilter);
+    if (approvalStatusFilter !== approvalOptions[0] && approvalStatusFilter !== ALL_OPTION) {
+        filtered = filtered.filter((o) => o.approval_status === approvalStatusFilter);
     }
 
-    // 4. Delivery Status Filter
-    if (deliveryStatusFilter !== initialDeliveryStatus && deliveryStatusFilter !== ALL_OPTION) {
-        filtered = filtered.filter(order => order.deliveryStatus === deliveryStatusFilter);
+    if (deliveryStatusFilter !== deliveryOptions[0] && deliveryStatusFilter !== ALL_OPTION) {
+        filtered = filtered.filter((o) => o.delivery_status === deliveryStatusFilter);
     }
 
-    // 5. Payment Status Filter
-    if (paymentStatusFilter !== initialPaymentStatus && paymentStatusFilter !== ALL_OPTION) {
-        filtered = filtered.filter(order => order.paymentStatus === paymentStatusFilter);
+    if (paymentStatusFilter !== paymentOptions[0] && paymentStatusFilter !== ALL_OPTION) {
+        filtered = filtered.filter((o) => o.payment_status === paymentStatusFilter);
     }
 
     return filtered;
     }, [
-    orders,                
+    orders,
     supplierFilter,
     approvalStatusFilter,
     deliveryStatusFilter,
     paymentStatusFilter,
-    dateRangeFilter
-    ]); 
-    
+    dateRangeFilter,
+    ]);
 
-    // --- Pagination Logic ---
+    /* =======================
+    PAGINATION
+    ======================= */
+
     const totalOrders = filteredOrders.length;
     const totalPages = Math.ceil(totalOrders / rowLimit);
 
     const paginatedOrders = useMemo(() => {
-        const startIndex = (currentPage - 1) * rowLimit;
-        const endIndex = startIndex + rowLimit;
-        return filteredOrders.slice(startIndex, endIndex);
+    const start = (currentPage - 1) * rowLimit;
+    return filteredOrders.slice(start, start + rowLimit);
     }, [filteredOrders, rowLimit, currentPage]);
-    // --- SAVE EDIT HANDLER ---
+
+    /* =======================
+    SAVE / DELETE
+    ======================= */
+
     const handleSaveEdit = async (updatedOrder) => {
-        console.log("Updated Order to send:", updatedOrder); // <-- log here
-        try {
-            const response = await fetch(
-            `http://localhost:5000/api/purchasing/${updatedOrder.po}`, // <-- URL param
-            {
-                method: "PUT",
-                headers: {
-                "Content-Type": "application/json",
-                },
-                body: JSON.stringify(updatedOrder),
-            }
-            );
-
-            if (!response.ok) {
-            const text = await response.text();
-            console.error("Status:", response.status);
-            console.error("Response:", text);
-            throw new Error("Failed to update purchase");
-            }
-
-            const saved = await response.json();
-
-            setOrders(prev =>
-            prev.map(order => (order.PO === saved.PO ? saved : order))
-            );
-
-            setIsEditModalOpen(false);
-        } catch (err) {
-            console.error(err);
-            alert("Error updating purchase");
+    try {
+        const res = await fetch(
+        `http://localhost:5000/api/purchasing/${updatedOrder.po}`,
+        {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(updatedOrder),
         }
-    };
-    // --- DELETE HANDLER ---
-    const handleDeletePurchase = async (po) => {
-        if (!confirm("Delete this purchase?")) return;
+        );
 
-        try {
-            const res = await fetch(
-            `http://localhost:5000/api/purchasing/${po}`,
-            { method: "DELETE" }
-            );
+        if (!res.ok) throw new Error("Failed to update purchase");
 
-            if (!res.ok) throw new Error("Delete failed");
+        const saved = await res.json();
 
-            // ✅ REFRESH DATA
-            await fetchPurchases();
-        } catch (err) {
-            console.error(err);
-        }
-        };
-    // --- FETCH PURCHASES FOR INITIAL LOAD ---
-    const fetchPurchases = async () => {
-        const res = await fetch("http://localhost:5000/api/purchasing");
-        const data = await res.json();
-        setOrders(data);
-    };
-    useEffect(() => {
+        setOrders((prev) =>
+        prev.map((o) => (o.po === saved.po ? saved : o))
+        );
+        setIsEditModalOpen(false);
         fetchPurchases();
+        fetchSuppliers();
+        fetchStats();
+    } catch (err) {
+        console.error(err);
+        alert("Error updating purchase");
+    }
+    };
+
+    const handleDeletePurchase = async (po) => {
+    if (!confirm("Delete this purchase?")) return;
+
+    try {
+        const res = await fetch(
+        `http://localhost:5000/api/purchasing/${po}`,
+        { method: "DELETE" }
+        );
+
+        if (!res.ok) throw new Error("Delete failed");
+
+        fetchPurchases();
+        fetchSuppliers();
+        fetchStats();
+    } catch (err) {
+        console.error(err);
+    }
+    };
+
+    /* =======================
+    INITIAL LOAD
+    ======================= */
+
+    useEffect(() => {
+    fetchPurchases();
+    fetchSuppliers();
+    fetchStats();
     }, []);
     
     return (
@@ -313,6 +340,7 @@ function CreatePurchase() {
                     orders={paginatedOrders} 
                     onEdit={handleEdit}
                     onDelete={handleDeletePurchase} 
+                    suppliers={suppliers}
                 />
 
                 <div className = "flex items-center justify-between mb-3">

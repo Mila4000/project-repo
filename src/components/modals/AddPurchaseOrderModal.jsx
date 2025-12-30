@@ -1,137 +1,194 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
-import CustomFormSelect from '../filter/CustomFormSelect'; 
-import AddItemModal from './AddItemModal'; 
+import React, { useState,useMemo, useEffect } from "react";
+import { Plus, Trash2, X } from "lucide-react";
 
+import CustomFormSelect from "../filter/CustomFormSelect";
+import AddItemModal from "./AddItemModal";
+import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
 
-const SupplierData = [
-    { supplier: 'Earl Meats Inc.' },
-    { supplier: 'Javier Meats' },
-    { supplier: 'Betez Trading' }
-];
+/* -------------------------------------------------------------------------- */
+/*                                   DATA                                     */
+/* -------------------------------------------------------------------------- */
 
 const warehouseData = [
-    { warehouse: 'Saog' },
-    { warehouse: 'Meycuayan' },
-    { warehouse: 'Quezon City' }
+  { warehouse: "Saog" },
+  { warehouse: "Meycuayan" },
+  { warehouse: "Quezon City" },
 ];
 
+/* -------------------------------------------------------------------------- */
+/*                             MAIN COMPONENT                                 */
+/* -------------------------------------------------------------------------- */
 
 function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
-    if (!isOpen) return null;
+  /* ----------------------------- STATE ----------------------------------- */
 
-    // --- State for Form Values ---
-    const [formValues, setFormValues] = useState({
-        PONumber: '',
-        supplier: null,
-        transactionDate: '',
-        warehouse: null,
-        remarks: '',
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [purchaseItems, setPurchaseItems] = useState([]);
+
+  const [receiptFileName, setReceiptFileName] = useState("No file chosen");
+
+  const [formValues, setFormValues] = useState({
+    PONumber: "",
+    supplier: null,
+    transaction_date: "",
+    warehouse: null,
+    remarks: "",
+  });
+
+  /* ----------------------------- HANDLERS -------------------------------- */
+
+  const handleInputChange = (value, name) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+  const resetForm = () => {
+    setFormValues({
+      PONumber: "",
+      supplier: null,
+      transaction_date: "",
+      warehouse: null,
+      remarks: "",
     });
 
-    // --- NEW STATE FOR ITEMS AND ITEM MODAL ---
-    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-    // Structure: { id, brand, type, quantity, unitPrice, total }
-    const [purchaseItems, setPurchaseItems] = useState([
-        
+    setPurchaseItems([]);
+    setReceiptFileName("No file chosen");
+  };
+  const handleClose = () => {
+    resetForm();
+    onClose(); // this is the parent's closeModal()
+  };
+  const handleOpenItemModal = () => setIsItemModalOpen(true);
+  const handleCloseItemModal = () => setIsItemModalOpen(false);
+
+  const handleAddItem = (newItem) => {
+    console.log("Adding item:", newItem);
+    setPurchaseItems((prev) => [
+      ...prev,
+      { ...newItem, id: Date.now() },
     ]);
+    handleCloseItemModal();
+  };
 
-    // --- Handlers ---
-    const handleInputChange = (value, name) => {
-        setFormValues(prev => ({
-            ...prev,
-            [name]: value
-        }));
+  const handleRemoveItem = (id) => {
+    setPurchaseItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    setReceiptFileName(file ? file.name : "No file chosen");
+  };
+
+  /* ----------------------------- SUBMIT ---------------------------------- */
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    console.log("Current purchase items:", purchaseItems);
+    const newPurchase = {
+      PO: `PO-${formValues.PONumber}`,
+      supplier: formValues.supplier,
+
+      transaction_date: new Date(
+        formValues.transaction_date
+      ).toISOString(),
+
+      delivery_date: new Date().toISOString(),
+
+      items: purchaseItems.map((item) => ({
+        name: item.brand,
+        type: item.type,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+      })),
+      merchandise_subtotal: merchandiseSubtotal,
+        shipping_subtotal: shippingSubtotal,
+        discount_subtotal: discountSubtotal,
+        total: totalPayment,
+      approval_status: "Pending",
+      delivery_status: "Order Placed",
+      payment_status: "N/A",
+      remarks: formValues.remarks,
+      status: "pending",
     };
-    
-    // Handler to open the Add Item modal
-    const handleOpenItemModal = () => setIsItemModalOpen(true);
-    // Handler to close the Add Item modal
-    const handleCloseItemModal = () => setIsItemModalOpen(false);
 
-    // Handler to receive new item data from the AddItemModal and add it to the table
-    const handleAddItem = (newItem) => {
-        // Add a unique ID to the new item
-        const itemWithId = {
-            ...newItem,
-            id: Date.now() // Simple unique ID
-        };
-        setPurchaseItems(prev => [...prev, itemWithId]);
-        handleCloseItemModal();
-    };
-
-    // Handler to remove an item from the table
-    const handleRemoveItem = (id) => {
-        setPurchaseItems(prev => prev.filter(item => item.id !== id));
-    };
-    
-    const handleFormSubmit = async (e) => {
-        e.preventDefault();
-
-        // Use ISO string for timestamp
-        const formattedTransactionDate = new Date(formValues.transactionDate).toISOString();
-        const formattedDeliveryDate = new Date().toISOString(); // Current date/time
-
-        const newPurchase = {
-            PO: "PO-" + formValues.PONumber,
-            supplier: formValues.supplier,
-            transactionDate: formattedTransactionDate,
-            deliveryDate: formattedDeliveryDate,
-            total: totalPayment.toFixed(2),
-            approvalStatus: "Pending",
-            deliveryStatus: "Order Placed",
-            paymentStatus: "N/A",
-            remarks: formValues.remarks,
-            quantity: purchaseItems.reduce((sum, item) => sum + item.quantity, 0),
-            items: purchaseItems,
-            status:"pending"
-        };
-
-        try {
-            const response = await fetch("http://localhost:5000/api/purchasing", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(newPurchase),
-            });
-
-            if (!response.ok) throw new Error("Failed to save purchase");
-
-            const savedPurchase = await response.json();
-            console.log("Saved Purchase:", savedPurchase);
-            onAddPurchase(savedPurchase);
-
-            onClose();
-        } catch (err) {
-            console.error(err);
-            alert("Error saving purchase. See console.");
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/purchasing",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newPurchase),
         }
+      );
+
+      if (!response.ok) {
+        const errText = await response.text();
+        console.error("Backend error:", errText);
+        throw new Error("Failed to save purchase");
+      }
+
+      const savedPurchase = await response.json();
+      onAddPurchase(savedPurchase);
+      handleClose();
+    } catch (err) {
+      console.error(err);
+      alert("Error saving purchase. See console.");
+    }
+  };
+
+  /* ----------------------------- COMPUTED -------------------------------- */
+
+  const supplierOptions = suppliers.map((s) => ({
+    value: s.id,
+    label: s.businessname,
+  }));
+
+  const warehouseOptions = warehouseData.map((w) => ({
+    value: w.warehouse,
+    label: w.warehouse,
+  }));
+
+  const paymentTotals = useMemo(() => {
+        return calculatePurchaseTotals(purchaseItems);
+    }, [purchaseItems]);
+
+    const {
+        merchandiseSubtotal,
+        shippingSubtotal,
+        discountSubtotal,
+        totalPayment
+    } = paymentTotals;
+
+  /* ----------------------------- EFFECTS --------------------------------- */
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchSuppliers = async () => {
+      setLoadingSuppliers(true);
+      try {
+        const res = await fetch("http://localhost:5000/api/supplier");
+        const data = await res.json();
+        setSuppliers(data);
+      } catch (err) {
+        console.error("Failed to load suppliers", err);
+      } finally {
+        setLoadingSuppliers(false);
+      }
     };
 
+    fetchSuppliers();
+  }, [isOpen]);
 
+  /* ----------------------------- GUARD ----------------------------------- */
 
-    // File upload state and handler
-    const [receiptFileName, setReceiptFileName] = useState('No file chosen');
-    const handleFileChange = (event) => {
-        const files = event.target.files;
-        if (files.length > 0) {
-            const fileName = files[0].name;
-            setReceiptFileName(fileName);
-        } else {
-            setReceiptFileName('No file chosen');
-        }
-    };
+  if (!isOpen) return null;
 
-
-    // --- Data Transformation ---
-    const supplierOptions = SupplierData.map(d => ({ value: d.supplier, label: d.supplier }));
-    const warehouseOptions = warehouseData.map(d => ({ value: d.warehouse, label: d.warehouse }));
-    
-    // Calculate total payments dynamically (Simple total sum for demonstration)
-    const merchandiseSubtotal = purchaseItems.reduce((sum, item) => sum + item.total, 0);
-    const totalPayment = merchandiseSubtotal; // For simplicity, only using subtotal
-
+  /* ----------------------------- JSX ------------------------------------- */
     return (
         <>
             <div className="fixed inset-0 bg-black/20 dark:bg-black/20 z-40 overflow-y-auto">
@@ -142,7 +199,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                             Create New Purchase (PO)
                         </h2>
 
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
+                        <button onClick={handleClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                             <X className="w-7 h-7 text-slate-600 dark:text-slate-300 cursor-pointer"/>
                         </button>
                     </div>
@@ -169,23 +226,23 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                             
                             {/* SUPPLIER FIELD */}
                             <CustomFormSelect
-                                label="Supplier"
-                                name="supplier"
-                                options={supplierOptions}
-                                initialValue={formValues.supplier}
-                                onSelect={handleInputChange}
-                                placeholder="" 
+                            label="Supplier"
+                            name="supplier"
+                            options={supplierOptions}
+                            initialValue={formValues.supplier}
+                            onSelect={handleInputChange}
+                            placeholder={loadingSuppliers ? "Loading suppliers..." : "Select supplier"}
                             />
 
                             <div> 
-                                <label htmlFor="transactionDate" 
+                                <label htmlFor="transaction_date" 
                                 className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
                                 Transaction Date 
                                 </label> 
                                 <input type="date" 
-                                id="transactionDate"
-                                name="transactionDate"
-                                value={formValues.transactionDate}
+                                id="transaction_date"
+                                name="transaction_date"
+                                value={formValues.transaction_date}
                                 onChange={(e) => handleInputChange(e.target.value, e.target.name)} 
                                 className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white" /> 
                             </div>
@@ -305,11 +362,11 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Shipping Subtotal</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{shippingSubtotal.toFixed(2)}</td>
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Item Discount Subtotal</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{discountSubtotal.toFixed(2)}</td>
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Order Discount</td>
@@ -327,7 +384,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
 
                         {/* Action Buttons */}
                         <div className="pt-4 flex justify-end space-x-3">
-                            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                            <button type="button" onClick={handleClose} className="cursor-pointer px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                                 Cancel
                             </button>
                             <button type="submit" className="cursor-pointer px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">

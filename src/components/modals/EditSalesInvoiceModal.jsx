@@ -28,7 +28,7 @@ function EditSalesInvoiceModal({ isOpen, onClose, orderData, onSave }) {
     const [formData, setFormData] = useState({
         PONumber: '',
         supplier: '',
-        transactionDate: '',
+        transaction_date: '',
         remarks: '',
         deliveryStatus: '',
         paymentStatus: '',
@@ -56,7 +56,7 @@ function EditSalesInvoiceModal({ isOpen, onClose, orderData, onSave }) {
             setFormData({
                 PONumber: orderData.PONumber || orderData.PO || '',
                 supplier: orderData.supplier || '', // Mapping JSON 'supplier' to state 'supplier'
-                transactionDate: orderData.transactionDate || '',
+                transaction_date: orderData.transaction_date || '',
                 remarks: orderData.remarks || '',
                 deliveryStatus: orderData.deliveryStatus || '',
                 paymentStatus: orderData.paymentStatus || '',
@@ -169,8 +169,8 @@ function EditSalesInvoiceModal({ isOpen, onClose, orderData, onSave }) {
                                     <input
                                         type="date"
                                         id="date"
-                                        name="transactionDate" 
-                                        value={formData.transactionDate}
+                                        name="transaction_date" 
+                                        value={formData.transaction_date}
                                         onChange={handleInputChange} 
                                         className="w-full px-3 py-2 text-sm rounded-md border border-slate-300
                                                     bg-white text-slate-700

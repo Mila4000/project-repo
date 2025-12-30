@@ -30,17 +30,84 @@ const statusOptions = [
 
 
 function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
-    const [formValues, setFormValues] = useState(orderData || {});
+    const [formValues, setFormValues] = useState({
+    po: "",
+    supplier_id: null,
+    total: "",
+    transaction_date: "",
+    delivery_date: "",
+    approval_status: "",
+    delivery_status: "",
+    payment_status: "",
+    status: "",
+    remarks: ""
+    });
+    
+    const [suppliers, setSuppliers] = useState([]);
 
     useEffect(() => {
-        if (orderData) {
-            setFormValues(orderData);
-        } else {
-            setFormValues({});
-        }
-    }, [orderData]);
+    if (!orderData || !isOpen) return;
 
+    setFormValues({
+        po: orderData.po ?? "",
+        supplier_id:
+        orderData.supplier_id ??
+        orderData.supplier?.id ??
+        null,
+        total: orderData.total ?? "",
+        transaction_date: orderData.transaction_date ?? "",
+        delivery_date: orderData.delivery_date ?? "",
+        approval_status: orderData.approval_status ?? "",
+        delivery_status: orderData.delivery_status ?? "",
+        payment_status: orderData.payment_status ?? "",
+        status: orderData.status ?? "",
+        remarks: orderData.remarks ?? ""
+    });
+    }, [orderData, isOpen]);
+    const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+    const supplierOptions = suppliers.map(s => ({
+    value: Number(s.id),
+    label: s.businessname
+    }));
+    useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchSuppliers = async () => {
+        setLoadingSuppliers(true);
+        try {
+        const res = await fetch("http://localhost:5000/api/supplier");
+        const data = await res.json();
+        setSuppliers(data);
+        } catch (err) {
+        console.error("Failed to load suppliers", err);
+        } finally {
+        setLoadingSuppliers(false);
+        }
+    };
+
+    fetchSuppliers();
+    }, [isOpen]);
+
+    
     if (!isOpen || !orderData) return null;
+    const resetForm = () => {
+    setFormValues({
+        po: "",
+        supplier_id: null,
+        total: "",
+        transaction_date: "",
+        delivery_date: "",
+        approval_status: "",
+        delivery_status: "",
+        payment_status: "",
+        status: "",
+        remarks: ""
+    });
+    };
+    const handleClose = () => {
+        resetForm();
+        onClose();
+    };
 
     // Handler supports both standard input events and direct {name, value} objects from ModalCustomFormSelect
     const handleInputChange = (input) => {
@@ -63,8 +130,8 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         onSave(formValues); 
+        resetForm();
     };
-
     return (
         <div className="fixed inset-0 bg-black/20 dark:bg-black/20 z-40 overflow-y-auto">
             <div className="relative my-10 mx-auto max-w-4xl bg-white dark:bg-slate-800 p-8 rounded-lg shadow-2xl">
@@ -73,7 +140,7 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
                     <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
                         Edit Purchase Order
                     </h2>
-                    <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
+                    <button onClick={handleClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                         <X className="w-7 h-7 text-slate-600 dark:text-slate-300 cursor-pointer"/>
                     </button>
                 </div>
@@ -87,21 +154,21 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
                                 className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 shadow-xs text-slate-500 dark:text-slate-400" />
                         </div>
                         
-                        {/* 2. Supplier (Editable) */}
+                        {/* 2. Total (Editable) */}
                         <div>
-                            <label htmlFor="supplier" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Supplier</label>
-                            <input type="text" id="supplier" name="supplier" value={formValues.supplier || ''} onChange={handleInputChange}
+                            <label htmlFor="total" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Total</label>
+                            <input type="text" id="total" name="total" value={formValues.total || ''} onChange={handleInputChange}
                                 className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         {/* 3. Transaction Date (Editable) */}
                         <div>
-                            <label htmlFor="transactiondate" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
+                            <label htmlFor="transaction_date" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
                             <input
                             type="date"
-                            id="transactiondate"
-                            name="transactiondate"
-                            value={formValues.transactiondate || ""}
+                            id="transaction_date"
+                            name="transaction_date"
+                            value={formValues.transaction_date || ""}
                             onChange={handleInputChange}
                             className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
                             />
@@ -114,26 +181,35 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
                             type="date"
                             id="deliverydate"
                             name="deliverydate"
-                            value={formValues.deliverydate || ""}
+                            value={formValues.delivery_date || ""}
                             onChange={handleInputChange}
                             className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
                             />
                         </div>
                         
-                        {/* 5. Total (Editable) */}
+                        {/* 5. Supplier (ModalCustomFormSelect) */}
                         <div>
-                            <label htmlFor="total" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Total</label>
-                            <input type="text" id="total" name="total" value={formValues.total || ''} onChange={handleInputChange}
-                                className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
+                            {loadingSuppliers ? (
+                                <div className="text-sm text-gray-400">Loading suppliers…</div>
+                            ) : (
+                                <ModalCustomFormSelect
+                                label="Supplier"
+                                name="supplier_id"
+                                options={supplierOptions}
+                                currentValue={formValues.supplier_id}
+                                onSelect={handleInputChange}
+                                />
+                            )}
+                            </div>
+                        
 
                         {/* 6. Approval Status (ModalCustomFormSelect) */}
                         <div>
                             <ModalCustomFormSelect
                                 label="Approval Status"
-                                name="approvalstatus"
+                                name="approval_status"
                                 options={approvalStatusOptions}
-                                currentValue={formValues.approvalstatus} 
+                                currentValue={formValues.approval_status} 
                                 onSelect={handleInputChange}
                             />
                         </div>
@@ -145,9 +221,9 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
                         <div>
                             <ModalCustomFormSelect
                                 label="Delivery Status"
-                                name="deliverystatus"
+                                name="delivery_status"
                                 options={deliveryStatusOptions}
-                                currentValue={formValues.deliverystatus}
+                                currentValue={formValues.delivery_status}
                                 onSelect={handleInputChange}
                             />
                         </div>
@@ -156,9 +232,9 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
                         <div>
                             <ModalCustomFormSelect
                                 label="Payment Status"
-                                name="paymentstatus"
+                                name="payment_status"
                                 options={paymentStatusOptions}
-                                currentValue={formValues.paymentstatus}
+                                currentValue={formValues.payment_status}
                                 onSelect={handleInputChange}
                             />
                         </div>
@@ -184,7 +260,7 @@ function EditPurchaseOrderModal({ isOpen, onClose, orderData, onSave }) {
 
                     {/* Action Buttons */}
                     <div className="pt-4 flex justify-end space-x-3">
-                        <button type="button" onClick={onClose} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:underline">
+                        <button type="button" onClick={handleClose} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:underline">
                             Cancel
                         </button>
                         <button type="submit" className="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">

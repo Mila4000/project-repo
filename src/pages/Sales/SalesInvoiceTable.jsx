@@ -75,7 +75,7 @@ function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.transactionDate}
+                            {order.transaction_date}
                           </span>
                         </td>
                         <td className="p-4">

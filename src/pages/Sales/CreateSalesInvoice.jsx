@@ -16,7 +16,7 @@ const SalesData = [
   {
     PO: 'PO-123456',
     supplier: 'Earl Meats',
-    transactionDate: 'Sep 21, 2025',
+    transaction_date: 'Sep 21, 2025',
     deliveryDate: 'Sep 25, 2025',
     total: '$1,234.56',
     approvalStatus: 'Pending',
@@ -27,7 +27,7 @@ const SalesData = [
   {
     PO: 'PO-135790',
     supplier: 'Javier Meats',
-    transactionDate: 'Sep 12, 2025',
+    transaction_date: 'Sep 12, 2025',
     deliveryDate: 'Sep 20, 2025',
     total: '$1,900.25',
     approvalStatus: 'Approved',
@@ -38,7 +38,7 @@ const SalesData = [
   {
     PO: 'PO-24681',
     supplier: 'Betez Trading',
-    transactionDate: 'Sep 11, 2025',
+    transaction_date: 'Sep 11, 2025',
     deliveryDate: 'Sep 19, 2025',
     total: '$2,100.15',
     approvalStatus: 'Rejected',
@@ -49,7 +49,7 @@ const SalesData = [
   {
     PO: "PO-987654",
     supplier: "Global Foods Inc.",
-    transactionDate: "Dec 05, 2025",
+    transaction_date: "Dec 05, 2025",
     deliveryDate: "Dec 10, 2025",
     total: "$5,432.10",
     approvalStatus: "Approved",
@@ -60,7 +60,7 @@ const SalesData = [
   {
     PO: "PO-001122",
     supplier: "Reyes Farms",
-    transactionDate: "Nov 28, 2025",
+    transaction_date: "Nov 28, 2025",
     deliveryDate: "Dec 01, 2025",
     total: "$850.75",
     approvalStatus: "Pending",
@@ -71,7 +71,7 @@ const SalesData = [
   {
     PO: "PO-765432",
     supplier: "Fresh Produce Co.",
-    transactionDate: "Dec 09, 2025",
+    transaction_date: "Dec 09, 2025",
     deliveryDate: "Dec 11, 2025",
     total: "$450.00",
     approvalStatus: "Pending",
@@ -82,7 +82,7 @@ const SalesData = [
   {
     PO: "PO-981234",
     supplier: "Betez Trading",
-    transactionDate: "Nov 30, 2025",
+    transaction_date: "Nov 30, 2025",
     deliveryDate: "Dec 05, 2025",
     total: "$1,999.99",
     approvalStatus: "Approved",
@@ -93,7 +93,7 @@ const SalesData = [
   {
     PO: "PO-345678",
     supplier: "Central Dairy Inc.",
-    transactionDate: "Dec 02, 2025",
+    transaction_date: "Dec 02, 2025",
     deliveryDate: "Dec 02, 2025",
     total: "$675.30",
     approvalStatus: "Approved",
@@ -104,7 +104,7 @@ const SalesData = [
   {
     PO: "PO-210987",
     supplier: "Earl Meats",
-    transactionDate: "Oct 15, 2025",
+    transaction_date: "Oct 15, 2025",
     deliveryDate: "Oct 20, 2025",
     total: "$5,200.70",
     approvalStatus: "Rejected",
@@ -115,7 +115,7 @@ const SalesData = [
   {
     PO: "PO-556677",
     supplier: "Global Foods Inc.",
-    transactionDate: "Nov 18, 2025",
+    transaction_date: "Nov 18, 2025",
     deliveryDate: "Nov 23, 2025",
     total: "$1,250.40",
     approvalStatus: "Pending",
@@ -126,7 +126,7 @@ const SalesData = [
   {
     PO: "PO-112233",
     supplier: "Javier Meats",
-    transactionDate: "Dec 06, 2025",
+    transaction_date: "Dec 06, 2025",
     deliveryDate: "Dec 10, 2025",
     total: "$3,800.10",
     approvalStatus: "Approved",
@@ -137,7 +137,7 @@ const SalesData = [
   {
     PO: "PO-889900",
     supplier: "Reyes Farms",
-    transactionDate: "Oct 25, 2025",
+    transaction_date: "Oct 25, 2025",
     deliveryDate: "Oct 28, 2025",
     total: "$580.95",
     approvalStatus: "Approved",
@@ -148,7 +148,7 @@ const SalesData = [
   {
     PO: "PO-404040",
     supplier: "Fresh Produce Co.",
-    transactionDate: "Nov 01, 2025",
+    transaction_date: "Nov 01, 2025",
     deliveryDate: "Nov 03, 2025",
     total: "$710.25",
     approvalStatus: "Pending",
@@ -159,7 +159,7 @@ const SalesData = [
   {
     PO: "PO-606060",
     supplier: "Central Dairy Inc.",
-    transactionDate: "Sep 05, 2025",
+    transaction_date: "Sep 05, 2025",
     deliveryDate: "Sep 07, 2025",
     total: "$990.00",
     approvalStatus: "Rejected",
@@ -170,7 +170,7 @@ const SalesData = [
   {
     PO: "PO-707070",
     supplier: "Earl Meats",
-    transactionDate: "Dec 07, 2025",
+    transaction_date: "Dec 07, 2025",
     deliveryDate: "Dec 07, 2025",
     total: "$2,150.00",
     approvalStatus: "Approved",
@@ -185,13 +185,13 @@ const parseDate = (dateString) => {
 };
 
 const isDateInRange = (transactionDateString, startDate, endDate) => {
-  const transactionDate = parseDate(transactionDateString);
+  const transaction_date = parseDate(transactionDateString);
   
-  transactionDate.setHours(0, 0, 0, 0); 
+  transaction_date.setHours(0, 0, 0, 0); 
   startDate.setHours(0, 0, 0, 0); 
   endDate.setHours(23, 59, 59, 999); 
 
-  return transactionDate >= startDate && transactionDate <= endDate;
+  return transaction_date >= startDate && transaction_date <= endDate;
 };
 
 function CreateSalesInvoice() {
@@ -316,7 +316,7 @@ function CreateSalesInvoice() {
         }
 
         filtered = filtered.filter(order => 
-            isDateInRange(order.transactionDate, startDate, today)
+            isDateInRange(order.transaction_date, startDate, today)
         );
       }
 

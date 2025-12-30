@@ -43,13 +43,13 @@ const parseDate = (dateString) => {
 };
 
 const isDateInRange = (countingDateString, startDate, endDate) => {
-    const transactionDate = parseDate(countingDateString);
+    const transaction_date = parseDate(countingDateString);
     
-    transactionDate.setHours(0, 0, 0, 0); 
+    transaction_date.setHours(0, 0, 0, 0); 
     startDate.setHours(0, 0, 0, 0); 
     endDate.setHours(23, 59, 59, 999); 
 
-    return transactionDate >= startDate && transactionDate <= endDate;
+    return transaction_date >= startDate && transaction_date <= endDate;
 };
 // ------------------------------
 

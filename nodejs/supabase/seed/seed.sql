@@ -1,4 +1,4 @@
-insert into public.purchased_orders (PO, supplier, transactiondate, deliveryDate, total, approvalstatus, deliverystatus, paymentstatus, remarks, quantity, items)
+insert into public.purchased_orders (PO, supplier, transaction_date, deliveryDate, total, approvalstatus, deliverystatus, paymentstatus, remarks, quantity, items)
 values (
   'PO-123142',
   'Javier Meats',

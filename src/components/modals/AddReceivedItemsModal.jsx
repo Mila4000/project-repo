@@ -13,7 +13,7 @@ const SupplierData = [
 const ReceivedItemsData = [
     {
         POnumber: 'PO-123456',
-        TransactionDate: 'Sep 21, 2025',
+        transaction_date: 'Sep 21, 2025',
         SupplierName: 'Earl Meats Inc.',
         ContactNumber: '09123456789',
         Items: [
@@ -23,7 +23,7 @@ const ReceivedItemsData = [
     },
     {
         POnumber: 'PO-135790',
-        TransactionDate: 'Sep 20, 2025',
+        transaction_date: 'Sep 20, 2025',
         SupplierName: 'Javier Meats',
         ContactNumber: '09123456789',
         Items: [
@@ -32,7 +32,7 @@ const ReceivedItemsData = [
     },
     {
         POnumber: 'PO-24681',
-        TransactionDate: 'Sep 19, 2025',
+        transaction_date: 'Sep 19, 2025',
         SupplierName: 'Betez Trading',
         ContactNumber: '09989012345',
         Items: [
@@ -74,7 +74,7 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
     // --- STATE MANAGEMENT ---
     const [formValues, setFormValues] = useState({
         POnumber: '',
-        TransactionDate: '',
+        transaction_date: '',
         SupplierName: '', 
         ContactNumber: '', 
     });
@@ -96,7 +96,7 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
             setFormValues(prev => ({
                 ...prev,
                 POnumber: poNumber,
-                TransactionDate: poData.TransactionDate,
+                transaction_date: poData.transaction_date,
                 SupplierName: poData.SupplierName,
                 ContactNumber: poData.ContactNumber,
             }));
@@ -112,7 +112,7 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
              setFormValues(prev => ({
                 ...prev,
                 POnumber: poNumber,
-                TransactionDate: '',
+                transaction_date: '',
                 SupplierName: '',
                 ContactNumber: '',
             }));
@@ -209,7 +209,7 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
 
         console.log("New Received Item Data:", { ...formValues, receivedItems });
         
-        setFormValues({ POnumber: '', TransactionDate: '', SupplierName: '', ContactNumber: '' });
+        setFormValues({ POnumber: '', transaction_date: '', SupplierName: '', ContactNumber: '' });
         setReceivedItems([]); 
         onClose();
     };
@@ -250,8 +250,8 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
 
                             {/* Transaction Date (Autofilled) */}
                             <div>
-                                <label htmlFor="TransactionDate" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
-                                <input type="text" id="TransactionDate" name="TransactionDate" value={formValues.TransactionDate} 
+                                <label htmlFor="transaction_date" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
+                                <input type="text" id="transaction_date" name="transaction_date" value={formValues.transaction_date} 
                                     readOnly 
                                     className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/70 shadow-xs text-slate-700 dark:text-slate-200 cursor-not-allowed" 
                                     required 

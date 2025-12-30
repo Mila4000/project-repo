@@ -18,7 +18,7 @@ function CreateInvoiceModal({ isOpen, onClose }) {
     const [formValues, setFormValues] = useState({
         PONumber: '',
         customer: null,
-        transactionDate: '',
+        transaction_date: '',
         remarks: '',
     });
 
@@ -151,8 +151,8 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                     <input
                                         type="date"
                                         id="date"
-                                        name="transactionDate" 
-                                        value={formValues.transactionDate}
+                                        name="transaction_date" 
+                                        value={formValues.transaction_date}
                                         onChange={handleInputChange} 
                                         className="w-full px-3 py-2 text-sm rounded-md border border-slate-300
                                                     bg-white text-slate-700

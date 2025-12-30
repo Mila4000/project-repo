@@ -2,7 +2,7 @@ create table public.purchased_orders (
     id bigint generated always as identity primary key,
     PO text not null,
     supplier text,
-    transactionDate date,
+    transaction_date date,
     deliveryDate date,
     total numeric,
     approvalStatus text,

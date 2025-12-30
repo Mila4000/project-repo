@@ -15,7 +15,7 @@ const ReceivedItemsData = [
     PO: 'PO-123456',
     itemName: 'Chicken Thighs',
     supplier: 'Earl Meats',
-    transactionDate: 'Sep 21, 2025',
+    transaction_date: 'Sep 21, 2025',
     deliveryStatus: 'Delivered',
     expectedQuantity: '80',
     actualQuantity: '~',
@@ -26,7 +26,7 @@ const ReceivedItemsData = [
     PO: 'PO-135790',
     itemName: 'Fresh Beef',
     supplier: 'Javier Meats',
-    transactionDate: 'Sep 20, 2025',
+    transaction_date: 'Sep 20, 2025',
     deliveryStatus: 'Delivered',
     expectedQuantity: '90',
     actualQuantity: '~',
@@ -37,7 +37,7 @@ const ReceivedItemsData = [
     PO: "PO-001122",
     itemName: 'Chicken Thighs',
     supplier: "Reyes Farms",
-    transactionDate: "Nov 28, 2025",
+    transaction_date: "Nov 28, 2025",
     deliveryStatus: 'Delivered',
     expectedQuantity: '80',
     actualQuantity: '~',
@@ -48,7 +48,7 @@ const ReceivedItemsData = [
     PO: "PO-765432",
     itemName: "Lettuce",
     supplier: "Fresh Produce Co.",
-    transactionDate: "Dec 09, 2025",
+    transaction_date: "Dec 09, 2025",
     deliveryStatus: 'Delivered',
     expectedQuantity: "100",
     actualQuantity: "~",
@@ -63,13 +63,13 @@ const parseDate = (dateString) => {
 };
 
 const isDateInRange = (transactionDateString, startDate, endDate) => {
-  const transactionDate = parseDate(transactionDateString);
+  const transaction_date = parseDate(transactionDateString);
   
-  transactionDate.setHours(0, 0, 0, 0); 
+  transaction_date.setHours(0, 0, 0, 0); 
   startDate.setHours(0, 0, 0, 0); 
   endDate.setHours(23, 59, 59, 999); 
 
-  return transactionDate >= startDate && transactionDate <= endDate;
+  return transaction_date >= startDate && transaction_date <= endDate;
 };
 // ------------------------------
 
@@ -167,7 +167,7 @@ function ReceivedItems() {
         }
 
         filtered = filtered.filter(order => 
-            isDateInRange(order.transactionDate, startDate, today)
+            isDateInRange(order.transaction_date, startDate, today)
         );
       }
 

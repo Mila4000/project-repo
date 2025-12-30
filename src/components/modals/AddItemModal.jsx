@@ -6,61 +6,113 @@ import CustomFormSelect from '../filter/CustomFormSelect';
 const TYPE_OPTIONS = [
     { value: 'Standard Items', label: 'UNPACK' },
     { value: 'Premium Items', label: 'VIP' },
-    { value: 'Premium Items', label: 'VACUUM' },
+    { value: 'Valuable Items', label: 'VACUUM' },
     { value: 'Other Items/Services', label: 'Other Items/Services' }
 ];
 
 function AddItemModal({ isOpen, onClose, onAddItem }) {
+    /* =======================
+    ITEM FORM STATE
+    ======================= */
+
     const [itemForm, setItemForm] = useState({
-        brand: '',
-        type: '', // This will now store the selected option value
-        quantity: 0,
-        unitPrice: 0,
-        total: 0,
+    brand: "",
+    type: "",
+    quantity: 0,
+    unitPrice: 0,
+    shipping: 0,
+    discount: 0,
+    total: 0,
     });
 
+    /* =======================
+    AUTO TOTAL CALCULATION
+    ======================= */
+
     useEffect(() => {
-        const quantity = parseFloat(itemForm.quantity) || 0;
-        const unitPrice = parseFloat(itemForm.unitPrice) || 0;
-        setItemForm(prev => ({
-            ...prev,
-            total: quantity * unitPrice
+    const quantity = Number(itemForm.quantity) || 0;
+    const unitPrice = Number(itemForm.unitPrice) || 0;
+    const shipping = Number(itemForm.shipping) || 0;
+    const discount = Number(itemForm.discount) || 0;
+
+    setItemForm((prev) => ({
+        ...prev,
+        total: quantity * unitPrice + shipping - discount,
         }));
-    }, [itemForm.quantity, itemForm.unitPrice]);
+    }, [
+    itemForm.quantity,
+    itemForm.unitPrice,
+    itemForm.shipping,
+    itemForm.discount,
+    ]);
+
+    /* =======================
+    MODAL GUARD
+    ======================= */
 
     if (!isOpen) return null;
+
+    /* =======================
+    INPUT HANDLERS
+    ======================= */
 
     // Standard input handler
     const handleItemChange = (e) => {
         const { name, value, type } = e.target;
-        const newValue = (type === 'number' || name === 'quantity' || name === 'unitPrice') 
-            ? (value === '' ? '' : parseFloat(value))
+
+        const parsedValue =
+            type === "number" || name === "quantity" || name === "unitPrice"
+            ? value === ""
+                ? ""
+                : parseFloat(value)
             : value;
 
-        setItemForm(prev => ({ ...prev, [name]: newValue }));
+        setItemForm((prev) => ({
+            ...prev,
+            [name]: parsedValue,
+        }));
     };
 
-    // Special handler for the CustomFormSelect
+    // Custom select handler
     const handleSelectChange = (value, name) => {
-        setItemForm(prev => ({ ...prev, [name]: value }));
+        setItemForm((prev) => ({
+            ...prev,
+            [name]: value,
+        }));
     };
+
+    /* =======================
+    SAVE HANDLER
+    ======================= */
 
     const handleSave = (e) => {
         e.preventDefault();
+        console.log("Saving item:", itemForm);
         const finalItem = {
             ...itemForm,
-            quantity: parseFloat(itemForm.quantity) || 0,
-            unitPrice: parseFloat(itemForm.unitPrice) || 0,
-            total: parseFloat(itemForm.total) || 0,
+            quantity: Number(itemForm.quantity) || 0,
+            unitPrice: Number(itemForm.unitPrice) || 0,
+            shipping: Number(itemForm.shipping) || 0,
+            discount: Number(itemForm.discount) || 0,
+            total: Number(itemForm.total) || 0,
         };
-        
+
         if (!finalItem.brand || !finalItem.type || finalItem.quantity <= 0) {
-             alert("Please enter a brand, select a type, and enter a valid quantity.");
-             return;
+            alert("Please enter a brand, select a type, and enter a valid quantity.");
+            return;
         }
 
         onAddItem(finalItem);
-        setItemForm({ brand: '', type: '', quantity: 0, unitPrice: 0, total: 0 });
+
+        setItemForm({
+            brand: "",
+            type: "",
+            quantity: 0,
+            unitPrice: 0,
+            shipping: 0,
+            discount: 0,
+            total: 0,
+        });
     };
 
     return (
@@ -102,8 +154,8 @@ function AddItemModal({ isOpen, onClose, onAddItem }) {
                         <div>
                             <label htmlFor="Shipping" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Shipping</label>
                             <input 
-                                type="number" step="0.01" min="0" id="Shipping" name="Shipping"
-                                // value={itemForm.unitPrice}
+                                type="number" step="0.01" min="0" id="Shipping" name="shipping"
+                                value={itemForm.shipping}
                                 onChange={handleItemChange}
                                 className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:border-blue-500"
                                 required
@@ -112,8 +164,8 @@ function AddItemModal({ isOpen, onClose, onAddItem }) {
                         <div>
                             <label htmlFor="Discount" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Discount</label>
                             <input 
-                                type="number" step="0.01" min="0" id="Discount" name="Discount"
-                                // value={itemForm.unitPrice}
+                                type="number" step="0.01" min="0" id="Discount" name="discount"
+                                value={itemForm.discount}
                                 onChange={handleItemChange}
                                 className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:border-blue-500"
                                 required
