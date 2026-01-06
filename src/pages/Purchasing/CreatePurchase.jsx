@@ -244,7 +244,6 @@ function CreatePurchase() {
     const start = (currentPage - 1) * rowLimit;
     return filteredOrders.slice(start, start + rowLimit);
     }, [filteredOrders, rowLimit, currentPage]);
-    console.log(paginatedOrders);
     /* =======================
     SAVE / DELETE
     ======================= */

@@ -95,6 +95,8 @@ export const createPurchase = async (payload) => {
   const itemsToInsert = preparedItems.map(item => ({
     purchased_order_id: purchase.id,
     expected_quantity: 0,
+    warehouse:payload.warehouse,
+    item_code:"0-000-000",
     ...item
   }));
   const { error: itemsError } = await supabase

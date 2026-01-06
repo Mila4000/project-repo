@@ -102,6 +102,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     const newPurchase = {
       PO: `PO-${formValues.PONumber}`,
       supplier: formValues.supplier,
+      warehouse:formValues.warehouse,
 
       transaction_date: new Date(formValues.transaction_date).toISOString(),
       delivery_date: new Date().toISOString(),
@@ -124,7 +125,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
       remarks: formValues.remarks,
       status: "pending",
     };
-
     try {
       const response = await fetch("http://localhost:5000/api/purchasing", {
         method: "POST",
