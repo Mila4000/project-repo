@@ -5,9 +5,9 @@ function AddItemQuantityModal({ isOpen, onClose, onAddItem }) {
     
     // State to hold the item details
     const [itemForm, setItemForm] = useState({
-        ItemName: '',
-        ExpectedQuantity: '',
-        ActualQuantity: '',
+        product_name: '',
+        expected_quantity: '',
+        quantity: '',
     });
     
     // --- 2. CONDITIONAL RETURN AFTER HOOKS ---
@@ -34,13 +34,13 @@ function AddItemQuantityModal({ isOpen, onClose, onAddItem }) {
         e.preventDefault();
 
         const finalItem = {
-            ItemName: itemForm.ItemName,
-            // Ensure quantities are stored as numbers or empty strings
-            ExpectedQuantity: itemForm.ExpectedQuantity,
-            ActualQuantity: itemForm.ActualQuantity,
+            product_name: itemForm.product_name,
+            expected_quantity: itemForm.expected_quantity,
+            quantity: itemForm.quantity,
+            unit_price: 0, // Default unit price
         };
-        
-        if (!finalItem.ItemName || (finalItem.ExpectedQuantity === '' && finalItem.ActualQuantity === '')) {
+
+        if (!finalItem.product_name || (finalItem.expected_quantity === '' && finalItem.quantity === '')) {
             alert("Please enter an Item Name and at least one quantity (Expected or Actual).");
             return;
         }
@@ -49,9 +49,9 @@ function AddItemQuantityModal({ isOpen, onClose, onAddItem }) {
         
         // Reset form for next item
         setItemForm({
-            ItemName: '',
-            ExpectedQuantity: '',
-            ActualQuantity: '',
+            product_name: '',
+            expected_quantity: '',
+            quantity: '',
         });
     };
 
@@ -75,14 +75,14 @@ function AddItemQuantityModal({ isOpen, onClose, onAddItem }) {
                 <form onSubmit={handleSave} className="space-y-4">
                     {/* Item Name Input */}
                     <div>
-                        <label htmlFor="ItemName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                        <label htmlFor="product_name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                             Item Name
                         </label>
                         <input 
                             type="text" 
-                            id="ItemName" 
-                            name="ItemName"
-                            value={itemForm.ItemName}
+                            id="product_name" 
+                            name="product_name"
+                            value={itemForm.product_name}
                             onChange={handleItemChange}
                             className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
                             required
@@ -92,16 +92,16 @@ function AddItemQuantityModal({ isOpen, onClose, onAddItem }) {
                     <div className="grid grid-cols-2 gap-4">
                         {/* Expected Quantity Input */}
                         <div>
-                            <label htmlFor="ExpectedQuantity" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            <label htmlFor="expected_quantity" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                 Expected Quantity
                             </label>
                             <input 
                                 type="number" 
                                 step="0.01" 
                                 min="0"
-                                id="ExpectedQuantity" 
-                                name="ExpectedQuantity"
-                                value={itemForm.ExpectedQuantity}
+                                id="expected_quantity" 
+                                name="expected_quantity"
+                                value={itemForm.expected_quantity}
                                 onChange={handleItemChange}
                                 className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
                             />
@@ -109,16 +109,16 @@ function AddItemQuantityModal({ isOpen, onClose, onAddItem }) {
 
                         {/* Actual Quantity Input */}
                         <div>
-                            <label htmlFor="ActualQuantity" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                            <label htmlFor="quantity" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                 Actual Quantity
                             </label>
                             <input 
                                 type="number" 
                                 step="0.01" 
                                 min="0"
-                                id="ActualQuantity" 
-                                name="ActualQuantity"
-                                value={itemForm.ActualQuantity}
+                                id="quantity" 
+                                name="quantity"
+                                value={itemForm.quantity}
                                 onChange={handleItemChange}
                                 className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
                             />

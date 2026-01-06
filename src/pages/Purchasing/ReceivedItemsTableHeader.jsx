@@ -49,7 +49,7 @@ function ReceivedItemsTableHeader({
                 
                 <button className="cursor-pointer flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg hover:shadow-lg transition-all" onClick={onAddReceivedItemClick}>
                     <Plus className="w-4 h-4" />
-                    <span className="text-sm font-medium">Add Purchase</span>
+                    <span className="text-sm font-medium">Add Product</span>
                 </button>
             </div>
         </div>

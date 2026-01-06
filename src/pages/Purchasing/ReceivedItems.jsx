@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 import ReceivedStatsGrid from './ReceivedStatsGrid';
 import ReceivedItemsTableHeader from './ReceivedItemsTableHeader';
@@ -16,10 +16,9 @@ const ReceivedItemsData = [
     itemName: 'Chicken Thighs',
     supplier: 'Earl Meats',
     transaction_date: 'Sep 21, 2025',
-    deliveryStatus: 'Delivered',
+    deliveryStatus: 'Order Placed',
     expectedQuantity: '80',
     actualQuantity: '~',
-    totalKilo: '~',
     remarks: 'Chicken Restock'
   },
   {
@@ -29,8 +28,7 @@ const ReceivedItemsData = [
     transaction_date: 'Sep 20, 2025',
     deliveryStatus: 'Delivered',
     expectedQuantity: '90',
-    actualQuantity: '~',
-    totalKilo: '~',
+    actualQuantity: '10',
     remarks: 'Chicken Restock'
   },
   {
@@ -39,9 +37,8 @@ const ReceivedItemsData = [
     supplier: "Reyes Farms",
     transaction_date: "Nov 28, 2025",
     deliveryStatus: 'Delivered',
-    expectedQuantity: '80',
-    actualQuantity: '~',
-    totalKilo: '~',
+    expectedQuantity: '0',
+    actualQuantity: '10',
     remarks: 'Chicken Restock'
   },
   {
@@ -50,9 +47,8 @@ const ReceivedItemsData = [
     supplier: "Fresh Produce Co.",
     transaction_date: "Dec 09, 2025",
     deliveryStatus: 'Delivered',
-    expectedQuantity: "100",
-    actualQuantity: "~",
-    totalKilo: "~",
+    expectedQuantity: "0",
+    actualQuantity: "10",
     remarks: "LETTUCE ORDER"
   }
 ];
@@ -62,7 +58,7 @@ const parseDate = (dateString) => {
   return new Date(dateString); 
 };
 
-const isDateInRange = (transactionDateString, startDate, endDate) => {
+const isDateInRange = (transactionDateString, startDate, endDate) => {0
   const transaction_date = parseDate(transactionDateString);
   
   transaction_date.setHours(0, 0, 0, 0); 
@@ -74,130 +70,266 @@ const isDateInRange = (transactionDateString, startDate, endDate) => {
 // ------------------------------
 
 function ReceivedItems() {
-    const iconProps = {
-        className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
-    };
+  /* =========================
+      STATE
+  ========================= */
+  const [stats, setStats] = useState(null);
+  const [items, setItems] = useState([]);
+  /* =========================
+    ICON CONFIG
+  ========================= */
+  const iconProps = {
+    className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
+  };
 
-    // --- DYNAMIC OPTION GENERATION (Explicitly uses ALL_OPTION) ---
-    const extractUniqueOptions = (key, placeholder) => {
-        const uniqueValues = [...new Set(ReceivedItemsData.map(order => order[key]))];
-        return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
-    };
 
-    const rowLimitOptions = [5, 10, 15]; 
-    
-    const dateRangeOptions = ['Date Range', ALL_OPTION, 'Today', 'Last 7 Days', 'Last 30 Days'];
-    
-    const supplierOptions = extractUniqueOptions('supplier', 'Supplier');
-    const deliveryOptions = extractUniqueOptions('deliveryStatus', 'Delivery Status');
+  /* =========================
+    OPTION HELPERS
+  ========================= */
+  const extractUniqueOptions = (key, placeholder) => {
+    const uniqueValues = [...new Set(items.map(item => item[key]))];
+    return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
+  };
 
-    //the placeholder
-    const initialRowLimit = rowLimitOptions[0];
-    const initialDateRange = dateRangeOptions[0];
-    const initialSupplier = supplierOptions[0];
-    const initialDeliveryStatus = deliveryOptions[0];
+  const rowLimitOptions   = [5, 10, 15];
+  const dateRangeOptions  = ['Date Range', ALL_OPTION, 'Today', 'Last 7 Days', 'Last 30 Days'];
+  const supplierOptions   = extractUniqueOptions('supplier', 'Supplier');
+  const deliveryOptions   = extractUniqueOptions('delivery_status', 'Delivery Status');
 
-    // --- STATE MANAGEMENT ---
-    const [rowLimit, setRowLimit] = useState(initialRowLimit);
-    const [dateRangeFilter, setDateRangeFilter] = useState(initialDateRange);
-    const [supplierFilter, setSupplierFilter] = useState(initialSupplier);
-    const [deliveryStatusFilter, setDeliveryStatusFilter] = useState(initialDeliveryStatus);
-    const [currentPage, setCurrentPage] = useState(1);
+  /* =========================
+    INITIAL FILTER VALUES
+  ========================= */
+  const initialRowLimit        = rowLimitOptions[0];
+  const initialDateRange       = dateRangeOptions[0];
+  const initialSupplier        = supplierOptions[0];
+  const initialDeliveryStatus  = deliveryOptions[0];
 
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [itemToEdit, setItemToEdit] = useState(null);
 
-    // --- HANDLER FUNCTIONS ---
-    const handleRowLimitChange = (newValue) => {
-        setRowLimit(parseInt(newValue));
-        setCurrentPage(1); 
-    };
+  /* =========================
+    FILTER & PAGINATION STATE
+  ========================= */
+  const [rowLimit, setRowLimit]                     = useState(initialRowLimit);
+  const [dateRangeFilter, setDateRangeFilter]       = useState(initialDateRange);
+  const [supplierFilter, setSupplierFilter]         = useState(initialSupplier);
+  const [deliveryStatusFilter, setDeliveryStatusFilter] = useState(initialDeliveryStatus);
+  const [currentPage, setCurrentPage]               = useState(1);
 
-    const handleDateRangeChange = (newValue) => {
-        setDateRangeFilter(newValue);
-        setCurrentPage(1);
-    };
 
-    const handleSupplierChange = (newValue) => {
-        setSupplierFilter(newValue);
-        setCurrentPage(1);
-    };
+  /* =========================
+    MODAL STATE
+  ========================= */
+  const [isAddModalOpen, setIsAddModalOpen]   = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [itemToEdit, setItemToEdit]           = useState(null);
 
-    const handleDeliveryChange = (newValue) => {
-        setDeliveryStatusFilter(newValue);
-        setCurrentPage(1);
-    };
 
-    const handleOpenModal = () => setIsModalOpen(true);
-    const handleCloseModal = () => setIsModalOpen(false);
+  /* =========================
+    FILTER HANDLERS
+  ========================= */
+  const handleRowLimitChange = (value) => {
+    setRowLimit(Number(value));
+    setCurrentPage(1);
+  };
 
-    const handleEdit = (item) => {
-        setItemToEdit(item);
-        setIsEditModalOpen(true);
-    };
+  const handleDateRangeChange = (value) => {
+    setDateRangeFilter(value);
+    setCurrentPage(1);
+  };
 
-    const handleSaveEdit = (updatedItem) => {
-        console.log("Saving Received Item:", updatedItem);
-        setIsEditModalOpen(false);
-    };
+  const handleSupplierChange = (value) => {
+    setSupplierFilter(value);
+    setCurrentPage(1);
+  };
 
-    // --- FILTERING LOGIC ---
-    const filteredOrders = useMemo(() => {
-      let filtered = ReceivedItemsData;
-      
-      // 1. Date Range Filter
-      // Only apply if the value is NOT the placeholder AND NOT 'All'
-      if (dateRangeFilter !== initialDateRange && dateRangeFilter !== ALL_OPTION) {
-        const today = new Date();
-        let startDate = new Date(0); 
+  const handleDeliveryChange = (value) => {
+    setDeliveryStatusFilter(value);
+    setCurrentPage(1);
+  };
 
-        switch (dateRangeFilter) {
-          case 'Today':
-              startDate = today; 
-              break;
-          case 'Last 7 Days':
-              startDate = new Date(today);
-              startDate.setDate(today.getDate() - 7);
-              break;
-          case 'Last 30 Days':
-              startDate = new Date(today);
-              startDate.setDate(today.getDate() - 30);
-              break;
+
+  /* =========================
+    MODAL HANDLERS
+  ========================= */
+  const handleOpenModal  = () => setIsAddModalOpen(true);
+  const handleCloseModal = () => setIsAddModalOpen(false);
+
+
+  /* =========================
+    CRUD HANDLERS
+  ========================= */
+  const handleEdit = (item) => {
+    setItemToEdit(item);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDelete = async (id) => {
+    if (!confirm("Delete this received item?")) return;
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/received-items/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) throw new Error('Delete failed');
+
+      setItems(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error('Failed to delete received item', err);
+    }
+  };
+
+  const handleSaveEdit = async (updatedItem) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/received-items/${updatedItem.id}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedItem),
         }
+      );
 
-        filtered = filtered.filter(order => 
-            isDateInRange(order.transaction_date, startDate, today)
-        );
+      if (!res.ok) throw new Error('Update failed');
+
+      const savedItem = await res.json();
+
+      setItems(prev =>
+        prev.map(item => (item.id === savedItem.id ? savedItem : item))
+      );
+
+      setIsEditModalOpen(false);
+    } catch (err) {
+      console.error('Failed to update received item', err);
+    }
+  };
+
+
+  /* =========================
+    FETCHING
+  ========================= */
+  const fetchStats = async () => {
+    try {
+      const res  = await fetch("http://localhost:5000/api/received-items/stats");
+      const data = await res.json();
+      setStats(data);
+    } catch (err) {
+      console.error("Failed to fetch received items stats", err);
+    }
+  };
+
+  const fetchItems = async () => {
+    try {
+      const res  = await fetch("http://localhost:5000/api/received-items");
+      const data = await res.json();
+
+      const normalized = data.map(item => ({
+        id: item.id,
+        po_number: item.purchased_orders.po,
+        purchased_orders_id: item.purchased_order_id,
+        product_name: item.product_name,
+        supplier: item.purchased_orders.supplier.businessname,
+        transaction_date: item.purchased_orders.transaction_date,
+        delivery_status: item.purchased_orders.delivery_status,
+        expected_quantity: item.expected_quantity,
+        quantity: item.quantity,
+        remarks: item.purchased_orders.remarks,
+      }));
+
+      setItems(normalized);
+    } catch (err) {
+      console.error("Failed to fetch received items", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+    fetchStats();
+  }, []);
+
+
+  /* =========================
+    ADD HANDLER
+  ========================= */
+  const handleAddReceivedItems = (newItem) => {
+    setItems(prev => [...prev, ...newItem]);
+    console.log('Newly added received items:', newItem);
+    fetchItems();
+    setIsAddModalOpen(false);
+  };
+
+
+  /* =========================
+    FILTERING LOGIC
+  ========================= */
+  const filteredItems = useMemo(() => {
+    let filtered = items;
+
+    // Date Range
+    if (dateRangeFilter !== initialDateRange && dateRangeFilter !== ALL_OPTION) {
+      const today = new Date();
+      let startDate = new Date(0);
+
+      switch (dateRangeFilter) {
+        case 'Today':
+          startDate = today;
+          break;
+        case 'Last 7 Days':
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - 7);
+          break;
+        case 'Last 30 Days':
+          startDate = new Date(today);
+          startDate.setDate(today.getDate() - 30);
+          break;
       }
 
-      // Supplier Filter
-      if (supplierFilter !== initialSupplier && supplierFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.supplier === supplierFilter);
-      }
+      filtered = filtered.filter(order =>
+        isDateInRange(order.transaction_date, startDate, today)
+      );
+    }
 
-      // Delivery Status Filter
-      if (deliveryStatusFilter !== initialDeliveryStatus && deliveryStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.deliveryStatus === deliveryStatusFilter);
-      }
-        
-        return filtered;
-    }, [dateRangeFilter, supplierFilter, deliveryStatusFilter, initialDateRange, initialSupplier, initialDeliveryStatus]); 
+    // Supplier
+    if (supplierFilter !== initialSupplier && supplierFilter !== ALL_OPTION) {
+      filtered = filtered.filter(order => order.supplier === supplierFilter);
+    }
 
-    // --- Pagination Logic ---
-    const totalOrders = filteredOrders.length;
-    const totalPages = Math.ceil(totalOrders / rowLimit);
+    // Delivery Status
+    if (
+      deliveryStatusFilter !== initialDeliveryStatus &&
+      deliveryStatusFilter !== ALL_OPTION
+    ) {
+      filtered = filtered.filter(
+        order => order.delivery_status === deliveryStatusFilter
+      );
+    }
+
+    return filtered;
+  }, [
+    items,
+    dateRangeFilter,
+    supplierFilter,
+    deliveryStatusFilter,
+    initialDateRange,
+    initialSupplier,
+    initialDeliveryStatus,
+  ]);
+
+
+  /* =========================
+    PAGINATION
+  ========================= */
+  const totalOrders = filteredItems.length;
+  const totalPages  = Math.ceil(totalOrders / rowLimit);
+
+  const paginatedOrders = useMemo(() => {
+    const start = (currentPage - 1) * rowLimit;
+    const end   = start + rowLimit;
+    return filteredItems.slice(start, end);
+  }, [filteredItems, rowLimit, currentPage]);
     
-    const paginatedOrders = useMemo(() => {
-        const startIndex = (currentPage - 1) * rowLimit;
-        const endIndex = startIndex + rowLimit;
-        return filteredOrders.slice(startIndex, endIndex);
-    }, [filteredOrders, rowLimit, currentPage]);
-
-
   return (
     <div>
-      <ReceivedStatsGrid/>
+      <ReceivedStatsGrid stats={stats} />
       <div className = "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl py-3 px-5 border border-slate-200/50 dark:border-slate-700/50">
 
         <ReceivedItemsTableHeader
@@ -218,7 +350,7 @@ function ReceivedItems() {
           iconProps={iconProps}
         />
 
-        <ReceivedItemsTable orders={paginatedOrders} onEdit={handleEdit}/>
+        <ReceivedItemsTable orders={paginatedOrders} onEdit={handleEdit} onDelete={handleDelete} />
 
         <div className = "flex items-center justify-between mb-3">
           <RowLimiter
@@ -235,7 +367,7 @@ function ReceivedItems() {
         </div>
       </div>
 
-        <AddReceivedItemsModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} />
+        <AddReceivedItemsModal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} onAddItem={handleAddReceivedItems} />
         
         <EditReceivedItemsModal 
             isOpen={isEditModalOpen} 

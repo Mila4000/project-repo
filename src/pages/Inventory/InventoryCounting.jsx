@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 import InventoryCountingStatsGrid from './InventoryCountingStatsGrid';
 import InventoryCountingTableHeader from './InventoryCountingTableHeader';
@@ -57,10 +57,22 @@ function InventoryCounting() {
     const iconProps = {
         className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
     };
-
+    const [items,setItems]=useState([]);
+    const fetchInventoryItem = async () =>{
+        try {
+             const res = await fetch("http://localhost:5000/api/inventory");
+            const data = await res.json();
+            setItems(data);
+        } catch (error) {
+            console.error("Failed to display items", error)
+        }
+    }
+    useEffect(()=>{
+        fetchInventoryItem();
+    },[])
     // --- DYNAMIC OPTION GENERATION (Explicitly uses ALL_OPTION) ---
     const extractUniqueOptions = (key, placeholder) => {
-        const uniqueValues = [...new Set(WarehouseData.map(order => order[key]))];
+        const uniqueValues = [...new Set(items.map(order => order[key]))];
         return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
     };
 
@@ -113,7 +125,7 @@ function InventoryCounting() {
 
     // --- FILTERING LOGIC ---
     const filteredOrders = useMemo(() => {
-        let filtered = WarehouseData;
+        let filtered = items;
         
         // 1. Date Range Filter (Using CountingDate)
         if (dateRangeFilter !== initialDateRange && dateRangeFilter !== ALL_OPTION) {
@@ -153,7 +165,7 @@ function InventoryCounting() {
         }
             
         return filtered;
-    }, [dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
+    }, [items,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
 
     // --- Pagination Logic ---
     const totalOrders = filteredOrders.length;

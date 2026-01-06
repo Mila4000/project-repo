@@ -30,9 +30,11 @@ function SupplierListTable({ suppliers, onEdit, onDelete }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {suppliers.map((supplier) => (
+                    {suppliers.length > 0 ? (
+                    suppliers.map((supplier,index) => {
+                        return(
                         <tr key={supplier.name} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                            <td className="p-4">
+                            <td className="p-4" key={index}>
                                 <span className="text-sm font-medium text-blue-500">
                                     {supplier.name}
                                 </span>
@@ -81,7 +83,14 @@ function SupplierListTable({ suppliers, onEdit, onDelete }) {
                                 </span>
                             </td>
                         </tr>
-                    ))}
+                    );
+                    })) : (
+                        <tr>
+                            <td colSpan="8" className="p-4 text-center text-sm text-slate-600 dark:text-slate-300">
+                                No suppliers found.
+                            </td>
+                        </tr>
+                    )}
                 </tbody>
             </table>
         </div>

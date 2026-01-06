@@ -1,9 +1,8 @@
 import React from 'react';
 import { Pencil, Trash2, ReceiptText } from 'lucide-react'; 
 
-function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
+function SalesInvoiceTable({ orders, onEdit, onViewReceipt, suppliers }) {
     // NOTE: The static PurchasedOrders data is removed and now received via the 'orders' prop.
-    
     const getApprovalStatusColor = (approvalStatus) => {
         switch (approvalStatus) {
             case "Approved":
@@ -42,7 +41,9 @@ function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
         }
     };
-
+    const getSupplierById = (id) => {
+        return suppliers.find(supplier => supplier.id === id);
+    }
     return (
         <div className="overflow-x-auto pb-6 mt-4">
           <table className="w-full">
@@ -62,15 +63,15 @@ function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
                 <tbody>
                   {orders.map((order, index) => {
                     return (
-                      <tr key={order.PO} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <tr key={order.po} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4" key={index}>
                           <span className="text-sm font-medium text-blue-500">
-                            {order.PO}
+                            {order.po}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.supplier}
+                            {getSupplierById(order.supplier_id)?.businessname ?? "—"}
                           </span>
                         </td>
                         <td className="p-4">
@@ -84,18 +85,18 @@ function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getApprovalStatusColor(order.approvalStatus)}`}> 
-                            {order.approvalStatus}
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getApprovalStatusColor(order.approval_status)}`}> 
+                            {order.approval_status}
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(order.deliveryStatus)}`}>
-                            {order.deliveryStatus}
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(order.delivery_status)}`}>
+                            {order.delivery_status}
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
-                            {order.paymentStatus}
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(order.payment_status)}`}>
+                            {order.payment_status}
                           </span>
                         </td>
                         <td className="p-4"> 

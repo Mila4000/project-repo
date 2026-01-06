@@ -87,27 +87,37 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    console.log("Current purchase items:", purchaseItems);
+
+    // --- BASIC FRONTEND VALIDATION ---
+    if (!purchaseItems.length) {
+      alert("Please add at least one item before submitting the purchase order.");
+      return;
+    }
+
+    if (!formValues.PONumber || !formValues.supplier || !formValues.transaction_date) {
+      alert("Please complete all required fields.");
+      return;
+    }
+
     const newPurchase = {
       PO: `PO-${formValues.PONumber}`,
       supplier: formValues.supplier,
 
-      transaction_date: new Date(
-        formValues.transaction_date
-      ).toISOString(),
-
+      transaction_date: new Date(formValues.transaction_date).toISOString(),
       delivery_date: new Date().toISOString(),
 
       items: purchaseItems.map((item) => ({
         name: item.brand,
         type: item.type,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unitPrice),
       })),
+
       merchandise_subtotal: merchandiseSubtotal,
-        shipping_subtotal: shippingSubtotal,
-        discount_subtotal: discountSubtotal,
-        total: totalPayment,
+      shipping_subtotal: shippingSubtotal,
+      discount_subtotal: discountSubtotal,
+      total: totalPayment,
+
       approval_status: "Pending",
       delivery_status: "Order Placed",
       payment_status: "N/A",
@@ -116,27 +126,54 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     };
 
     try {
-      const response = await fetch(
-        "http://localhost:5000/api/purchasing",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newPurchase),
-        }
-      );
+      const response = await fetch("http://localhost:5000/api/purchasing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newPurchase),
+      });
 
+      // --- HANDLE BACKEND ERRORS ---
       if (!response.ok) {
-        const errText = await response.text();
-        console.error("Backend error:", errText);
-        throw new Error("Failed to save purchase");
+        let errorPayload;
+
+        try {
+          errorPayload = await response.json();
+        } catch {
+          errorPayload = { message: await response.text() };
+        }
+
+        // DUPLICATE PO
+        if (
+          response.status === 409 ||
+          errorPayload?.code === "DUPLICATE_PO" ||
+          errorPayload?.code === "23505"
+        ) {
+          alert("Purchase Order number already exists. Please use a different PO number.");
+          return;
+        }
+
+        // VALIDATION ERRORS
+        if (response.status === 400) {
+          alert(errorPayload?.message || "Invalid purchase data. Please check your input.");
+          return;
+        }
+
+        throw new Error(errorPayload?.message || "Failed to save purchase");
       }
 
       const savedPurchase = await response.json();
+
       onAddPurchase(savedPurchase);
       handleClose();
+
     } catch (err) {
-      console.error(err);
-      alert("Error saving purchase. See console.");
+      console.error("Purchase submission error:", err);
+
+      if (err.message?.includes("fetch")) {
+        alert("Cannot connect to server. Please try again later.");
+      } else {
+        alert("An unexpected error occurred while saving the purchase order.");
+      }
     }
   };
 
@@ -254,8 +291,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                                 name="warehouse"
                                 options={warehouseOptions}
                                 initialValue={formValues.warehouse}
-                                onSelect={handleInputChange}
-                                placeholder="" 
+                                onSelect={handleInputChange} 
                             />
                             
                         </div>

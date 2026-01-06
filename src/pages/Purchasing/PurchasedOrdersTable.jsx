@@ -52,7 +52,7 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">PO No.</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Supplier</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Transaction Date</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total(in ₱)</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Approval Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Payment Status</th>
@@ -61,7 +61,8 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                 </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => {
+                  {orders.length > 0 ? (
+                  orders.map((order, index) => {
                     return (
                       <tr key={order.po} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4" key={index}>
@@ -81,7 +82,7 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.total} 
+                            ₱{order.total} 
                           </span>
                         </td>
                         <td className="p-4">
@@ -119,7 +120,13 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                         </td>
                       </tr>
                     );
-                  })}
+                  })) : (
+                    <tr>
+                      <td colSpan="9" className="p-4 text-center text-sm text-slate-600 dark:text-slate-300">
+                        No purchased orders found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
             </table>
         </div>

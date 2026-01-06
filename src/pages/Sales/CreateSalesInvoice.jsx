@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 import SalesInvoiceStatsGrid from './SalesInvoiceStatsGrid';
 import SalesInvoiceTableHeader from './SalesInvoiceTableHeader';
@@ -198,7 +198,9 @@ function CreateSalesInvoice() {
     const iconProps = {
       className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
     };
-
+    
+    const [orders, setOrders] = useState([]);
+    const [suppliers, setSuppliers] = useState([]);
     // --- ADD MODAL STATE ---
     const [isModalOpen, setIsModalOpen] = useState(false);
     const openModal = () => setIsModalOpen(true);
@@ -213,9 +215,29 @@ function CreateSalesInvoice() {
     const closeViewModal = () => setIsViewModalOpen(false);
 
     const extractUniqueOptions = (key, placeholder) => {
-      const uniqueValues = [...new Set(SalesData.map(order => order[key]))];
+      const uniqueValues = [...new Set(orders.map(order => order[key]))];
       return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
     };
+    const fetchPurchases = async () => {
+    try {
+        const res = await fetch("http://localhost:5000/api/purchasing");
+        const data = await res.json();
+        setOrders(data);
+    } catch (err) {
+        console.error("Failed to fetch purchased orders", err);
+    }
+    };
+
+    const fetchSuppliers = async () => {
+    try {
+        const res = await fetch("http://localhost:5000/api/supplier");
+        const data = await res.json();
+        setSuppliers(data);
+    } catch (err) {
+        console.error("Failed to fetch suppliers", err);
+    }
+    };
+
 
     const rowLimitOptions = [5, 10, 15]; 
     
@@ -293,7 +315,7 @@ function CreateSalesInvoice() {
 
     // --- FILTERING LOGIC ---
     const filteredOrders = useMemo(() => {
-      let filtered = SalesData;
+      let filtered = orders;
       
       // 1. Date Range Filter
       // Only apply if the value is NOT the placeholder AND NOT 'All'
@@ -341,7 +363,7 @@ function CreateSalesInvoice() {
       }
         
         return filtered;
-    }, [dateRangeFilter, supplierFilter, approvalStatusFilter, deliveryStatusFilter, paymentStatusFilter, initialDateRange, initialSupplier, initialApprovalStatus, initialDeliveryStatus, initialPaymentStatus]); 
+    }, [orders, dateRangeFilter, supplierFilter, approvalStatusFilter, deliveryStatusFilter, paymentStatusFilter, initialDateRange, initialSupplier, initialApprovalStatus, initialDeliveryStatus, initialPaymentStatus]); 
 
     // --- Pagination Logic ---
     const totalOrders = filteredOrders.length;
@@ -353,6 +375,10 @@ function CreateSalesInvoice() {
         return filteredOrders.slice(startIndex, endIndex);
     }, [filteredOrders, rowLimit, currentPage]);
 
+    useEffect(() => {
+      fetchPurchases();
+      fetchSuppliers();
+    }, []);
 
   return (
     <div>
@@ -386,6 +412,7 @@ function CreateSalesInvoice() {
           orders={paginatedOrders}
           onEdit={handleEdit}
           onViewReceipt={openViewModal}
+          suppliers={suppliers}
         />
 
         <div className = "flex items-center justify-between mb-3">

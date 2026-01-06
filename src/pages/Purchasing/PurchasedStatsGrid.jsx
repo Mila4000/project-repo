@@ -6,8 +6,8 @@ function PurchasedStatsGrid({ stats }) {
 
   const gridStats = [
     {
-      title: "Total Purchased",
-      value: `$${stats.totalPurchased.toLocaleString()}`,
+      title: "Total Purchased(in ₱)",
+      value: `₱${stats.totalPurchased.toLocaleString()}`,
       icon: DollarSign,
       bgColor: "bg-emerald-100",
       textColor: "text-emerald-600",

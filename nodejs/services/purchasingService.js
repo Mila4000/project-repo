@@ -48,7 +48,6 @@ export const createPurchase = async (payload) => {
   // 🔒 AUTHORITATIVE CALCULATIONS
   let total = 0;
   let totalQuantity = 0;
-  console.log("Preparing items for insertion:", items);
   const preparedItems = items.map(item => {
     const lineTotal = item.quantity * item.unitPrice;
     total += lineTotal;
@@ -83,22 +82,26 @@ export const createPurchase = async (payload) => {
     .select()
     .single();
 
-  if (purchaseError) throw purchaseError;
+  if (purchaseError) {
+    if (purchaseError.code === "23505") {
+      throw new Error("DUPLICATE_PO");
+    }
+    throw purchaseError;
+  }
 
   /**
    * STEP 2: INSERT LINE ITEMS
    */
   const itemsToInsert = preparedItems.map(item => ({
     purchased_order_id: purchase.id,
+    expected_quantity: 0,
     ...item
   }));
-  console.log("Inserting items:", itemsToInsert);
   const { error: itemsError } = await supabase
     .from("purchased_order_items")
     .insert(itemsToInsert);
 
   if (itemsError) {
-    // optional manual cleanup (since Supabase JS has no multi-table transaction)
     await supabase
       .from("purchased_orders")
       .delete()
@@ -159,14 +162,12 @@ export const getPurchaseStats = async () => {
     .select("purchased_order_id, quantity");
 
   if (itemsError) throw itemsError;
-
   // 3️⃣ Aggregate quantities per order
   const quantityByOrder = items.reduce((acc, item) => {
     acc[item.purchased_order_id] =
       (acc[item.purchased_order_id] || 0) + item.quantity;
     return acc;
   }, {});
-
   // 4️⃣ Final calculations
   const totalPurchased = orders.reduce(
     (sum, o) => sum + Number(o.total || 0),
@@ -185,7 +186,6 @@ export const getPurchaseStats = async () => {
   const totalDeliveries = orders.filter(
     o => o.delivery_status === "Delivered"
   ).length;
-
   return {
     totalPurchased,
     totalQuantity,

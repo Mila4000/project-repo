@@ -52,13 +52,13 @@ function CreatePurchase() {
     ======================= */
 
     const fetchStats = async () => {
-    try {
-        const res = await fetch("http://localhost:5000/api/purchasing/stats");
-        const data = await res.json();
-        setStats(data);
-    } catch (err) {
-        console.error("Failed to fetch purchase stats", err);
-    }
+        try {
+            const res = await fetch("http://localhost:5000/api/purchasing/stats");
+            const data = await res.json();
+            setStats(data);
+        } catch (err) {
+            console.error("Failed to fetch purchase stats", err);
+        }
     };
 
     const fetchPurchases = async () => {
@@ -66,7 +66,6 @@ function CreatePurchase() {
         const res = await fetch("http://localhost:5000/api/purchasing");
         const data = await res.json();
         setOrders(data);
-        console.log("Fetched purchases:", data);
     } catch (err) {
         console.error("Failed to fetch purchased orders", err);
     }
@@ -245,7 +244,7 @@ function CreatePurchase() {
     const start = (currentPage - 1) * rowLimit;
     return filteredOrders.slice(start, start + rowLimit);
     }, [filteredOrders, rowLimit, currentPage]);
-
+    console.log(paginatedOrders);
     /* =======================
     SAVE / DELETE
     ======================= */

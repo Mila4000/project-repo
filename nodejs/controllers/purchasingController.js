@@ -13,14 +13,25 @@ export const getAllPurchases = async (req, res) => {
 
 export const createPurchase = async (req, res) => {
   try {
-    const data = await purchasingService.createPurchase(req.body);
-    res.status(201).json(data);
+    const result = await purchasingService.createPurchase(req.body);
+    return res.status(201).json(result);
+
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Failed to save purchase" });
+    console.error("Purchase controller error:", err);
+
+    if (err.message === "DUPLICATE_PO") {
+      return res.status(409).json({
+        code: "DUPLICATE_PO",
+        message: "Purchase Order number already exists"
+      });
+    }
+
+    return res.status(500).json({
+      code: "PURCHASE_CREATE_FAILED",
+      message: "Failed to save purchase"
+    });
   }
 };
-
 export const updatePurchase = async (req, res) => {
   try {
     const data = await purchasingService.updatePurchase(req.params.po, req.body);

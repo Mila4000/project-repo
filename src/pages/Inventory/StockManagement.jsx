@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState,useEffect, useCallback } from 'react';
 import StockStatsGrid from './StockStatsGrid';
 import StocksTable from './StocksTable';
 import StocksTransferTable from './StocksTransferTable';
@@ -9,7 +9,20 @@ import AddStockTransferModal from '../../components/modals/AddStockTransferModal
 
 function StockManagement() {
     const [activeTab, setActiveTab] = useState('profile');
-    
+    const [stats, setStats]= useState([]);
+    const fetchStats = async () => {
+        try {
+            const res = await fetch("http://localhost:5000/api/stock/stats");
+            const data = await res.json();
+            setStats(data);
+        } catch (err) {
+            console.error("Failed to fetch purchase stats", err);
+        }
+    };
+    useEffect(() => {
+        fetchStats();
+    }, []);
+
     // --- MODAL STATES ---
     const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
     const [isAddTransferModalOpen, setIsAddTransferModalOpen] = useState(false);
@@ -39,7 +52,7 @@ function StockManagement() {
 
     return (
         <div>
-            <StockStatsGrid />
+            <StockStatsGrid stats={stats}/>
 
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl py-4 px-5 border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
                 <h1 className="p-2 text-[#535353] dark:text-white text-2xl font-bold">Stock Management</h1>

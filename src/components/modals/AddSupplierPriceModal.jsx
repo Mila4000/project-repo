@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import CustomFormSelect from '../filter/CustomFormSelect';
 
@@ -9,16 +9,28 @@ const supplierData = [
     { supplier: 'Betez Trading' }
 ];
 
-const supplierOptions = supplierData.map(item => ({
-    value: item.supplier, 
-    label: item.supplier 
-}));
+
 
 function AddSupplierPriceModal({ isOpen, onClose, onAdd }) {
     const [data, setData] = useState({ supplier: '', price: '' });
+    const [supplier,setSupplier] = useState([])
+    const fetchSuppliers = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/supplier");
+        const object = await res.json();
+        setSupplier(object);
+      } catch (err) {
+        console.error("Failed to load suppliers", err);
+      }
+    };
+    useEffect(()=>{
+        fetchSuppliers();
+    },[isOpen]);
 
-    if (!isOpen) return null;
-
+    const supplierOptions = supplier.map(item => ({
+        value: item.businessname, 
+        label: item.businessname 
+    }));
     const handleSubmit = (e) => {
         e.preventDefault();
         if (!data.supplier || !data.price) {
@@ -28,7 +40,7 @@ function AddSupplierPriceModal({ isOpen, onClose, onAdd }) {
         onAdd(data);
         setData({ supplier: '', price: '' }); // Reset
     };
-
+   if (!isOpen) return null;
     return (
         <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md overflow-hidden">

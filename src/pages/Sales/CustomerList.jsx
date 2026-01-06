@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, use, useEffect } from 'react';
 
 import CustomerListStatsGrid from './CustomerListStatsGrid';
 import CustomerListTableHeader from './CustomerListTableHeader';
@@ -160,17 +160,36 @@ const CustomersData = [
 
 function CustomerList() {
     const iconProps = { className: 'w-4 h-4 text-slate-500 dark:text-slate-500' };
-
+    const [orders, setOrders] = useState([]);
+    const [stats,setStats] = useState([]);
+    const fetchCustomers = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/customers');
+        const data = await res.json();
+        setOrders(data);
+      } catch (error) {
+        console.error("Error fetching customers:", error);
+      }
+    };
+    const fetchStats = async () => {
+    try {
+        const res = await fetch("http://localhost:5000/api/customers/stats");
+        const data = await res.json();
+        setStats(data);
+    } catch (err) {
+        console.error("Failed to fetch purchase stats", err);
+    }
+    };
     // --- DYNAMIC OPTION GENERATION ---
     const extractUniqueOptions = (key, placeholder) => {
-        const uniqueValues = [...new Set(CustomersData.map(customer => customer[key]))];
+        const uniqueValues = [...new Set(orders.map(customer => customer[key]))];
         return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
     };
 
     const rowLimitOptions = [5, 10, 15];
-    const nameOptions = extractUniqueOptions('Name', 'Name');
-    const customerTypeOptions = extractUniqueOptions('CustomerType', 'Customer Type');
-    const statusOptions = extractUniqueOptions('Status', 'Status');
+    const nameOptions = extractUniqueOptions('name', 'Name');
+    const customerTypeOptions = extractUniqueOptions('type', 'Customer Type');
+    const statusOptions = extractUniqueOptions('status', 'Status');
 
     const initialRowLimit = rowLimitOptions[0];
     const initialName = nameOptions[0];
@@ -216,15 +235,54 @@ function CustomerList() {
         setIsEditModalOpen(true);
     };
 
-    const handleSaveEdit = (updatedData) => {
-        console.log("Saving Customer Data:", updatedData);
-        // Logic to update your backend or state array goes here
-        setIsEditModalOpen(false);
+    const handleSaveEdit = async(updatedData) => {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/api/customers/${updatedData.id}`,
+            {
+              method:"PUT",
+              headers:{
+                "Content-Type":
+                "application/json"
+              },
+              body: JSON.stringify(updatedData),
+            }
+          );
+          if (!res.ok) throw new Error("Failed to update customer");
+          const saved = await res.json();
+
+          setOrders(
+            (prev)=>
+              prev.map((customer) => customer.id === saved.id? saved : customer)
+          );
+          setIsEditModalOpen(false);
+          fetchCustomers;
+        } catch (error) {
+          console.error(error);
+          alert("Error updating purchase");
+        }
+    };
+    const handleDelete = async(id)=>{
+      console.log("Id:",id);
+      if (!confirm("Delete this purchase?")) return;
+
+      try {
+          const res = await fetch(
+          `http://localhost:5000/api/customers/${id}`,
+          { method: "DELETE" }
+          );
+
+          if (!res.ok) throw new Error("Delete failed");
+
+          fetchCustomers();
+      } catch (err) {
+          console.error(err);
+      }
     };
 
     // --- FILTERING LOGIC ---
     const filteredOrders = useMemo(() => {
-        let filtered = CustomersData;
+        let filtered = orders;
         if (nameFilter !== initialName && nameFilter !== ALL_OPTION) {
             filtered = filtered.filter(customer => customer.Name === nameFilter);
         }
@@ -235,8 +293,13 @@ function CustomerList() {
             filtered = filtered.filter(customer => customer.Status === statusFilter);
         }
         return filtered;
-    }, [nameFilter, customerTypeFilter, statusFilter, initialName, initialCustomerType, initialStatus]);
+    }, [orders, nameFilter, customerTypeFilter, statusFilter, initialName, initialCustomerType, initialStatus]);
+    
 
+    useEffect(() => {
+      fetchCustomers();
+      fetchStats();
+    }, []);
     // --- PAGINATION LOGIC ---
     const totalOrders = filteredOrders.length;
     const totalPages = Math.ceil(totalOrders / rowLimit);
@@ -248,7 +311,7 @@ function CustomerList() {
 
     return (
       <div>
-          <CustomerListStatsGrid />
+          <CustomerListStatsGrid stats={stats}/>
           <div className="space-y-5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl py-4 px-5 border border-slate-200/50 dark:border-slate-700/50">
               
           <CustomerListTableHeader 
@@ -268,6 +331,7 @@ function CustomerList() {
           <CustomerListTable 
             orders={paginatedOrders} 
             onEdit={handleEditClick} 
+            onDelete={handleDelete}
           /> 
 
           <div className="flex items-center justify-between mb-3">
@@ -294,7 +358,7 @@ function CustomerList() {
         <EditCustomerModal
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          supplierData={customerToEdit}
+          customerData={customerToEdit}
           onSave={handleSaveEdit}
         />
       </div>

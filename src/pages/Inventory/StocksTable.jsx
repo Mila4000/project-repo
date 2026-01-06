@@ -25,28 +25,59 @@ const ALL_OPTION = 'All';
 
 function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, iconProps }) {
     // These values match the first item in the options array below
-    const [warehouseFilter, setWarehouseFilter] = useState('Warehouse');
-    const [statusFilter, setStatusFilter] = useState('Status');
-
+    const [warehouseFilter, setWarehouseFilter] = useState('warehouse');
+    const [statusFilter, setStatusFilter] = useState('status');
+    
+    const [items, setItems] =useState([]);
+    
+    const fetchItems = async () => {
+        try {
+          const res  = await fetch("http://localhost:5000/api/stock");
+          const data = await res.json();
+          const normalized = data.map(item => ({
+            id: item.id,
+            po_number: item.purchased_orders.po,
+            purchased_orders_id: item.purchased_order_id,
+            product_name: item.product_name,
+            supplier: item.purchased_orders.supplier.businessname,
+            transaction_date: item.purchased_orders.transaction_date,
+            delivery_status: item.purchased_orders.delivery_status,
+            expected_quantity: item.expected_quantity,
+            quantity: item.quantity,
+            remarks: item.purchased_orders.remarks,
+            warehouse:item.warehouse,
+            status:item.status,
+            item_code:item.item_code
+          }));
+          setItems(normalized);
+        } catch (err) {
+          console.error("Failed to fetch received items", err);
+        }
+      };
+    
+      useEffect(() => {
+        fetchItems();
+      }, []);
+    
     // 1. Extract Options (Strings only to match your CustomSelect components)
     const warehouseOptions = useMemo(() => {
-        const unique = [...new Set(StocksData.map(item => item.Warehouse))];
-        return ['Warehouse', ALL_OPTION, ...unique.sort()];
+        const unique = [...new Set(items.map(item => item.warehouse))];
+        return ['warehouse', ALL_OPTION, ...unique.sort()];
     }, []);
 
     const statusOptions = useMemo(() => {
-        const unique = [...new Set(StocksData.map(item => item.Status))];
-        return ['Status', ALL_OPTION, ...unique.sort()];
+        const unique = [...new Set(items.map(item => item.status))];
+        return ['status', ALL_OPTION, ...unique.sort()];
     }, []);
 
     // 2. Filter Logic
     const filteredData = useMemo(() => {
-        return StocksData.filter(item => {
-            const matchW = warehouseFilter === 'Warehouse' || warehouseFilter === ALL_OPTION || item.Warehouse === warehouseFilter;
-            const matchS = statusFilter === 'Status' || statusFilter === ALL_OPTION || item.Status === statusFilter;
+        return items.filter(item => {
+            const matchW = warehouseFilter === 'warehouse' || warehouseFilter === ALL_OPTION || item.warehouse === warehouseFilter;
+            const matchS = statusFilter === 'status' || statusFilter === ALL_OPTION || item.status === statusFilter;
             return matchW && matchS;
         });
-    }, [warehouseFilter, statusFilter]);
+    }, [items,warehouseFilter, statusFilter]);
 
     // 3. Update Parent with new total count for Pagination
     useEffect(() => {
@@ -58,7 +89,21 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
         const start = (currentPage - 1) * rowLimit;
         return filteredData.slice(start, start + rowLimit);
     }, [filteredData, rowLimit, currentPage]);
+    const handleDeletePurchase = async (id) => {
+        if (!confirm("Delete this stock?")) return;
+        console.log("ID: ", id)
+        try {
+            const res = await fetch(
+            `http://localhost:5000/api/stock/${id}`,
+            { method: "DELETE" }
+            );
 
+            if (!res.ok) throw new Error("Delete failed");
+            fetchItems();
+        } catch (err) {
+            console.error(err);
+        }
+    };
     const getStatusColor = (status) => {
         switch (status) {
             case "In Stock": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
@@ -66,7 +111,6 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
             default: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
         }
     };
-
     return (
         <div className="overflow-x-auto pb-6 mt-4 min-h-[300px]">
             {/* Filters Row */}
@@ -109,23 +153,23 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                 <tbody>
                     {paginatedData.length > 0 ? (
                         paginatedData.map((item, index) => (
-                            <tr key={`${item.ItemCode}-${index}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="p-4 text-sm font-medium text-blue-500">{item.Warehouse}</td>
-                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.ItemName}</td>
-                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.ItemCode}</td>
-                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.Quantity}</td>
+                            <tr key={`${item.id}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td className="p-4 text-sm font-medium text-blue-500">{item.warehouse}</td>
+                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.product_name}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.item_code}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity}</td>
                                 <td className="p-4 text-center">
-                                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(item.Status)}`}>
-                                        {item.Status}
+                                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(item.status)}`}>
+                                        {item.status}
                                     </span>
                                 </td>
                                 <td className="p-4 flex items-center gap-3"> 
                                     <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
-                                        // onClick={() => onEdit(order)}
+                                        //onClick={() => onEdit(order)}
                                     >
                                         <Pencil className="w-4 h-4"/>
                                     </span>
-                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer">
+                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer" onClick={() => handleDeletePurchase(item.id)}>
                                         <Trash2 className="w-4 h-4"/>
                                     </span>
                                 </td>

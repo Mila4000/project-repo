@@ -31,10 +31,10 @@ function InventoryCountingTable({ orders }) {
                 <tbody>
                   {orders.map((order, index) => {
                     return (
-                      <tr key={order.Warehouse} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <tr key={order.id} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4" key={index}>
                           <span className="text-sm font-medium text-blue-500">
-                            {   order.Warehouse}
+                            {order.warehouse}
                           </span>
                         </td>
                         <td className="p-4">
@@ -44,12 +44,12 @@ function InventoryCountingTable({ orders }) {
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                                {order.CountingDate}
+                                {order.count_date}
                           </span>
                         </td>
                         <td className="p-4 text-center">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getStatusColor(order.Status)}`}> 
-                                {order.Status} 
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getStatusColor(order.status)}`}> 
+                                {order.status} 
                           </span>
                         </td>
                         <td className="p-4 text-center"> 
