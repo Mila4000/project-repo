@@ -58,10 +58,8 @@ function EditCustomerModal({ isOpen, onClose, customerData, onSave }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log("Submitting", formData)
         onSave(formData);
     };
-    console.log(formData);
     return (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[60] flex items-center justify-center">
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-2xl mx-4" onClick={e => e.stopPropagation()}>

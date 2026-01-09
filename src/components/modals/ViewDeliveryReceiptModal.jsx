@@ -1,22 +1,28 @@
 import React, {useState} from 'react'
 import { X } from 'lucide-react'; 
 
-import ReceiptPhoto from '../../assets/receipts/gcash.jpg';
-import PaymentHistoryModal from './PaymentHistoryModal';
-import PayNowModal from './PayNowModal';
+import DeliveryPaymentHistoryModal from './DeliveryPaymentHistoryModal';
+import PayDeliveryNowModal from './PayDeliveryNowModal';
 
+import { getReceiptPublicUrl } from "../../utils/storageHelpers";
 
-function ViewReceiptModal({isOpen, onClose}) {
+function ViewReceiptModal({isOpen, displayData, onClose}) {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [isPayOpen, setIsPayOpen] = useState(false);
+    const receiptPublicUrl = getReceiptPublicUrl(displayData?.receipt_url);
 
+    const handleClosePayDeliveryModal = () =>{
+        setIsPayOpen(false);
+        onClose();
+    }
+    console.log("Display Data in ViewReceiptModal",displayData)
     if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center">
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
             <div className="w-full flex items-center justify-between mb-6 pb-3 border-b border-slate-200 dark:border-slate-700">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Proof of Payment</h2>
+                <h2 className="text-2xl font-bold text-slate-800 dark:text-white">Delivery Receipt Details</h2>
                 <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                     <X className="w-7 h-7 text-slate-600 dark:text-slate-300 cursor-pointer"/>
                 </button>
@@ -24,15 +30,25 @@ function ViewReceiptModal({isOpen, onClose}) {
 
             <div className="flex flex-col items-center space-y-1">
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                    Proof of Payment as of: December 10, 2025
+                    Proof of Payment as of: {displayData.transaction_date}
                 </p>
                 <div className="w-full overflow-hidden rounded-xl border border-slate-300 dark:border-slate-700">
-                    <img 
-                        src={ReceiptPhoto} 
-                        alt="Uploaded Receipt" 
+                    {receiptPublicUrl ? (
+                        <img
+                        src={receiptPublicUrl}
+                        alt="Uploaded Receipt"
                         className="w-full h-auto object-contain max-h-[60vh]"
-                    />
-                </div>
+                        onError={(e) => {
+                            e.currentTarget.src = "";
+                            e.currentTarget.alt = "Failed to load receipt";
+                        }}
+                        />
+                    ) : (
+                        <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                        No receipt uploaded
+                        </div>
+                    )}
+                    </div>
             </div>
 
             <div className="pt-5 flex justify-end space-x-3">
@@ -41,22 +57,26 @@ function ViewReceiptModal({isOpen, onClose}) {
                 className="px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-200/90 bg-slate-100 dark:bg-slate-700 dark:hover:bg-slate-600/80 hover:bg-slate-200/80 transition-colors">
                     View Payment History
                 </button>
+                {displayData.payment_status !== "Paid" && (
                 <button type="submit" 
                 onClick={() => setIsPayOpen(true)}
                 className="px-8 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">
                     Pay
-                </button>
+                </button>)}
             </div>
         </div>
 
-        <PaymentHistoryModal 
+        <DeliveryPaymentHistoryModal 
             isOpen={isHistoryOpen} 
             onClose={() => setIsHistoryOpen(false)} 
+            displayData={displayData}
         />
         
-        <PayNowModal 
+        <PayDeliveryNowModal 
             isOpen={isPayOpen} 
-            onClose={() => setIsPayOpen(false)} 
+            onClose={handleClosePayDeliveryModal
+            } 
+            displayData={displayData}
         />
     </div>
 

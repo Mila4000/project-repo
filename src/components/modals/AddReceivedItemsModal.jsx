@@ -107,15 +107,15 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
         purchased_order_id: item.purchased_order_id,
         unit_price: item.unit_price,
 
-        po_number: item.purchased_orders.po,
+        po_number: item.purchased_order.po,
         product_name: item.product_name,
 
         expected_quantity: item.expected_quantity ?? 0,
         quantity: item.quantity ?? '',
 
-        SupplierName: item.purchased_orders.supplier.businessname,
-        ContactNumber: item.purchased_orders.supplier.contactno,
-        transaction_date: item.purchased_orders.transaction_date,
+        SupplierName: item.purchased_order.supplier.businessname,
+        ContactNumber: item.purchased_order.supplier.contactno,
+        transaction_date: item.purchased_order.transaction_date,
         }));
 
         setReceivedOrders(normalized);
@@ -250,7 +250,6 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
         newItem,
     };
 
-    console.log("Submitting:", payload);
 
     try {
         const response = await fetch(
@@ -355,13 +354,6 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
                             <div className="flex items-center justify-between mb-3">
                                 <h1 className="text-[#535353] dark:text-white text-xl font-bold">Product Details</h1>
 
-                                <button
-                                    type="button"
-                                    onClick={handleOpenItemModal}
-                                    className="flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg cursor-pointer hover:shadow-lg transition-all">
-                                    <Plus className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Add Item</span>
-                                </button>
                             </div>
                             <table className="w-full">
                                 <thead>
@@ -369,7 +361,6 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
                                         <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Item Name</th>
                                         <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Expected Quantity</th>
                                         <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actual Quantity</th>
-                                        <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -393,46 +384,11 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
                                             className="w-full text-center rounded-md border"
                                             />
                                         </td>
-
-                                        <td className="p-4 text-center">
-                                            <button onClick={() => handleRemoveLineItem(item.id)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                            </button>
-                                        </td>
-                                        </tr>
-                                    ))}
-
-                                    {/* MANUAL ITEMS */}
-                                    {newItem.map((item, index) => (
-                                        <tr key={`manual-${index}`}>
-                                        <td className="p-4">{item.product_name}</td>
-
-                                        <td className="p-4 text-center">
-                                            {item.expected_quantity}
-                                        </td>
-
-                                        <td className="p-3 text-center">
-                                            <input
-                                            type="number"
-                                            min="0"
-                                            value={item.quantity}
-                                            onChange={e =>
-                                                handleNewItemQuantityChange(index, e.target.value)
-                                            }
-                                            className="w-full text-center rounded-md border"
-                                            />
-                                        </td>
-
-                                        <td className="p-4 text-center">
-                                            <button onClick={() => handleRemoveNewItem(index)}>
-                                            <Trash2 className="w-4 h-4 text-red-500" />
-                                            </button>
-                                        </td>
                                         </tr>
                                     ))}
 
                                     {/* EMPTY STATE */}
-                                    {lineItems.length === 0 && newItem.length === 0 && (
+                                    {lineItems.length === 0 && (
                                         <tr>
                                         <td
                                             colSpan="4"

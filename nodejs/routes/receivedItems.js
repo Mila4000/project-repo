@@ -8,5 +8,5 @@ router.post("/", receivedItemsController.createReceivedItem);
 router.put("/:id", receivedItemsController.updateReceivedItem);
 router.delete("/:id", receivedItemsController.deleteReceivedItem);
 router.get("/stats", receivedItemsController.getReceivedItemsStats);
-
+router.put("/view/bulk-save",receivedItemsController.bulkSavePurchaseItems);
 export default router;

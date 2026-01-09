@@ -3,44 +3,38 @@ import { supabase } from "../config/supabaseClient.js";
 
 export const getAllStockItems = async () => {
     const { data, error } = await supabase
-    .from('purchased_order_items')
+    .from('items')
     .select(`
         id,
-        product_name,
+        item_name,
         quantity,
-        expected_quantity,
-        purchased_order_id,
-        unit_price,
+        threshold_count,
+        suggested_retail_price,
         status,
-        warehouse,
         item_code,
-        purchased_orders (
+        warehouse(
         id,
-        po,
-        transaction_date,
-        delivery_status,
-        remarks,
-        supplier (
-            id,
-            businessname,
-            name,
-            contactno
-        )
+        whouse_name,
+        whouse_address
+        ),
+        purchased_order_item(
+        *,
+            purchased_order(
+            *
+            )
         )
     `);
     if (error) throw error;
+    console.log(data);
     return data;
 }
 export const createStockItem = async (stock) => {
     console.log("Stock",stock);
-    const unitPrice = Number(stock.pricing[0]?.price || 0);
-    console.log("Unit Price", unitPrice);
     
     const {data, error} = await supabase
-        .from("purchased_order_items")
+        .from("items")
         .insert([{
             product_name:stock.name,
-            purchased_order_id:"37",//replace this soon
             quantity:stock.quantity,
             unit_price:unitPrice,
             line_total: stock.quantity * unitPrice,
@@ -67,12 +61,12 @@ export const deleteStockItem = async (id) => {
 export const getStockStats = async() =>{
 
     const { data: totalItems, error: countError } = await supabase
-        .from("purchased_order_items")
+        .from("items")
         .select("*", {count:"exact"});
     if (countError) throw countError;
     const totalProduct = totalItems.length;
     const { data: totalQuantity, error: stockError } = await supabase
-        .from("purchased_order_items")
+        .from("items")
         .select("quantity");
     if (stockError) throw stockError;
 
@@ -82,7 +76,7 @@ export const getStockStats = async() =>{
     );
 
     const { data: totalCost, error: costError } = await supabase
-        .from("purchased_order_items")
+        .from("purchased_order_item")
         .select("line_total");
     if (costError) throw costError;
     const totalVal = totalCost.reduce(
@@ -90,7 +84,7 @@ export const getStockStats = async() =>{
         0
     );
     const { data: totalCritical, error: CritError } = await supabase
-        .from("purchased_order_items")
+        .from("items")
         .select("*", {count:"exact"})
         .eq("status","Critical Stock");
     if (CritError) throw CritError;

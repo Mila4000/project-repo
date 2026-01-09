@@ -87,7 +87,6 @@ function AddItemModal({ isOpen, onClose, onAddItem }) {
 
     const handleSave = (e) => {
         e.preventDefault();
-        console.log("Saving item:", itemForm);
         const finalItem = {
             ...itemForm,
             quantity: Number(itemForm.quantity) || 0,

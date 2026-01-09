@@ -1,8 +1,7 @@
 import React ,{useEffect }from 'react';
-import { Pencil, Trash2 } from 'lucide-react'; 
+import { Trash2, ReceiptText, Eye} from 'lucide-react'; 
 
-function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
-    
+function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onView}) {
     const getApprovalStatusColor = (approval_status) => {
         switch (approval_status) {
             case "Approved":
@@ -35,7 +34,7 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Unpaid":
                 return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-            case "N/A":
+            case "Partially Paid":
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
             default:
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
@@ -44,6 +43,8 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
     const getSupplierById = (id) => {
         return suppliers.find(supplier => supplier.id === id);
     }
+    console.log("Orders: ",orders)
+
     return (
         <div className="overflow-x-auto pb-6 mt-4">
           <table className="w-full">
@@ -56,8 +57,8 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Approval Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Payment Status</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Remarks</th> 
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Quantity</th> 
+                    <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 ">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -102,22 +103,36 @@ function PurchasedOrdersTable({ orders, onEdit, onDelete ,suppliers}) {
                         </td>
                         <td className="p-4"> 
                             <span className="text-sm text-slate-800 dark:text-white">
-                                {order.remarks}
+                                {order.total_quantity} kg
                             </span>
                         </td>
-                        <td className="p-4 flex items-center gap-3"> 
-                          <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
-                            onClick={() => onEdit(order)}
-                          >
-                            <Pencil className="w-4 h-4"/>
-                          </span>
+                        <td className="p-4 flex items-center justify-center gap-3">
+                        {/* View */}
+                        <span
+                          className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
+                          onClick={() => onView(order)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </span>
+
+                        {/* View Receipt – only if NOT Rejected */}
+                        {order.approval_status !== "Rejected" && (
                           <span
-                            className="text-sm text-red-800 dark:text-red-400 cursor-pointer hover:scale-110 transition"
-                            onClick={() => onDelete(order.po)}
+                            className="text-sm text-blue-900 dark:text-blue-500 cursor-pointer"
+                            onClick={() => onViewReceipt(order)}
                           >
-                            <Trash2 className="w-4 h-4" />
+                            <ReceiptText className="w-5 h-5" />
                           </span>
-                        </td>
+                        )}
+
+                        {/* Delete */}
+                        <span
+                          className="text-sm text-red-800 dark:text-red-400 cursor-pointer hover:scale-110 transition"
+                          onClick={() => onDelete(order.po)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </span>
+                      </td>
                       </tr>
                     );
                   })) : (

@@ -20,3 +20,10 @@ button
 {
   cursor: pointer;
 }
+
+.force-export,
+.force-export * {
+  color: rgb(15, 23, 42) !important;
+  background-color: white !important;
+  border-color: rgb(203, 213, 225) !important;
+}

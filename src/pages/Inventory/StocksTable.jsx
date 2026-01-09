@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react'; 
+import { Plus, Eye, Trash2 } from 'lucide-react'; 
 import CustomWarehouseSelect from '../../components/filter/CustomSupplierSelect'; 
 import CustomStatusSelect from '../../components/filter/CustomDeliveryStatusSelect'; 
 
@@ -32,33 +32,38 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
     
     const fetchItems = async () => {
         try {
-          const res  = await fetch("http://localhost:5000/api/stock");
-          const data = await res.json();
-          const normalized = data.map(item => ({
+            const res = await fetch("http://localhost:5000/api/stock");
+            const data = await res.json();
+
+            const normalized = data.map(item => ({
             id: item.id,
-            po_number: item.purchased_orders.po,
-            purchased_orders_id: item.purchased_order_id,
-            product_name: item.product_name,
-            supplier: item.purchased_orders.supplier.businessname,
-            transaction_date: item.purchased_orders.transaction_date,
-            delivery_status: item.purchased_orders.delivery_status,
-            expected_quantity: item.expected_quantity,
+            item_name: item.item_name,
             quantity: item.quantity,
-            remarks: item.purchased_orders.remarks,
-            warehouse:item.warehouse,
-            status:item.status,
-            item_code:item.item_code
-          }));
-          setItems(normalized);
+            threshold_count: item.threshold_count,
+            suggested_retail_price: item.suggested_retail_price,
+            status: item.status,
+            item_code: item.item_code,
+
+            // flatten warehouse
+            warehouse_id: item.warehouse?.id ?? null,
+            warehouse_name: item.warehouse?.whouse_name ?? "—",
+            warehouse_address: item.warehouse?.whouse_address ?? "—",
+
+            // keep relations if needed
+            purchased_order_item: item.purchased_order_item ?? []
+            }));
+
+            setItems(normalized);
         } catch (err) {
-          console.error("Failed to fetch received items", err);
+            console.error("Failed to fetch received items", err);
         }
-      };
+        };
+
     
       useEffect(() => {
         fetchItems();
       }, []);
-    
+      console.log(items);
     // 1. Extract Options (Strings only to match your CustomSelect components)
     const warehouseOptions = useMemo(() => {
         const unique = [...new Set(items.map(item => item.warehouse))];
@@ -91,7 +96,6 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
     }, [filteredData, rowLimit, currentPage]);
     const handleDeletePurchase = async (id) => {
         if (!confirm("Delete this stock?")) return;
-        console.log("ID: ", id)
         try {
             const res = await fetch(
             `http://localhost:5000/api/stock/${id}`,
@@ -146,6 +150,8 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Item Name</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Item Code</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Qty (KG)</th>
+                        <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Unit Price</th>
+                        <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Total Value</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Status</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
                     </tr>
@@ -154,10 +160,13 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                     {paginatedData.length > 0 ? (
                         paginatedData.map((item, index) => (
                             <tr key={`${item.id}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="p-4 text-sm font-medium text-blue-500">{item.warehouse}</td>
-                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.product_name}</td>
+                                <td className="p-4 text-sm font-medium text-blue-500">{item.warehouse_name}</td>
+                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.item_name}</td>
                                 <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.item_code}</td>
                                 <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.suggested_retail_price}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity * item.suggested_retail_price}</td>
+
                                 <td className="p-4 text-center">
                                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(item.status)}`}>
                                         {item.status}
@@ -167,7 +176,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                                     <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
                                         //onClick={() => onEdit(order)}
                                     >
-                                        <Pencil className="w-4 h-4"/>
+                                        <Eye className="w-4 h-4"/>
                                     </span>
                                     <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer" onClick={() => handleDeletePurchase(item.id)}>
                                         <Trash2 className="w-4 h-4"/>

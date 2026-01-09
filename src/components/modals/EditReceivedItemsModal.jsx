@@ -34,18 +34,15 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
             [name]: value
         }));
     };
-
+    console.log("Form Data", formData);
     const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Form Data to Submit:", formData);
     const payload = {
         id: formData.id,
         product_name: formData.product_name,
         quantity: Number(formData.quantity),
         expected_quantity: Number(formData.expected_quantity),
     };
-
-    console.log("Submitting Edit Received Item:", payload);
 
     onSave(payload);
     };
@@ -90,8 +87,10 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
                         value={formData.product_name || ''}
                         onChange={handleInputChange}
                         className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
-                                bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200
-                                focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                                readOnly
+                                disabled
                     />
                     </div>
 
@@ -134,12 +133,12 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
                     </label>
                     <input
                         name="expected_quantity"
-                        type="number" min="0"
                         value={formData.expected_quantity}
-                        onChange={handleInputChange}
                         className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
-                                bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200
-                                focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                        readOnly
+                        disabled
                     />
                     </div>
 

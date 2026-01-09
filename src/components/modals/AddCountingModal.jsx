@@ -74,7 +74,6 @@ function AddCountingModal({ isOpen, onClose }) {
             itemsToCount: items.filter(item => item.item.trim() !== '' || item.quantity.trim() !== '')
         };
         
-        console.log("New Counting Data:", finalData);
         try {
             const response = await fetch(
                 "http://localhost:5000/api/inventory",

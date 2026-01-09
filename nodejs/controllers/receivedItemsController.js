@@ -54,3 +54,20 @@ export const getReceivedItemsStats = async (req, res) => {
         res.status(500).json({ message: "Failed to load stats" });
     }
 };
+
+export const bulkSavePurchaseItems = async (req, res) => {
+  try {
+    const { items } = req.body;
+    console.log("Items Content",items)
+    if (!Array.isArray(items)) {
+      return res.status(400).json({ message: "Items must be an array" });
+    }
+
+    await receivedItemsService.bulkSave(items);
+
+    res.status(200).json({ message: "Items saved successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: err.message || "Failed to save items" });
+  }
+};

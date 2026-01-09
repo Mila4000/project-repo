@@ -55,7 +55,7 @@ function StockManagement() {
             <StockStatsGrid stats={stats}/>
 
             <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl py-4 px-5 border border-slate-200/50 dark:border-slate-700/50 shadow-sm">
-                <h1 className="p-2 text-[#535353] dark:text-white text-2xl font-bold">Stock Management</h1>
+                <h1 className="p-2 text-[#535353] dark:text-white text-2xl font-bold">Item List</h1>
 
                 <div>
                     <div className="mb-4 border-b border-gray-200 dark:border-gray-700">

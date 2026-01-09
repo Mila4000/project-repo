@@ -4,6 +4,7 @@ import { Plus, Trash2, X } from "lucide-react";
 import CustomFormSelect from "../filter/CustomFormSelect";
 import AddItemModal from "./AddItemModal";
 import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
+import { uploadReceipt } from "../../utils/storageHelpers";
 
 /* -------------------------------------------------------------------------- */
 /*                                   DATA                                     */
@@ -24,11 +25,15 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
 
   const [suppliers, setSuppliers] = useState([]);
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [discount, setDiscount] = useState(0);
+
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptFileName, setReceiptFileName] = useState("No file chosen");
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [purchaseItems, setPurchaseItems] = useState([]);
 
-  const [receiptFileName, setReceiptFileName] = useState("No file chosen");
 
   const [formValues, setFormValues] = useState({
     PONumber: "",
@@ -66,7 +71,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
   const handleCloseItemModal = () => setIsItemModalOpen(false);
 
   const handleAddItem = (newItem) => {
-    console.log("Adding item:", newItem);
     setPurchaseItems((prev) => [
       ...prev,
       { ...newItem, id: Date.now() },
@@ -79,103 +83,89 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
+    const file = e.target.files?.[0] || null;
+    setReceiptFile(file);
     setReceiptFileName(file ? file.name : "No file chosen");
   };
-
+  console.log("Purchase Item added", purchaseItems)
   /* ----------------------------- SUBMIT ---------------------------------- */
 
   const handleFormSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    // --- BASIC FRONTEND VALIDATION ---
-    if (!purchaseItems.length) {
-      alert("Please add at least one item before submitting the purchase order.");
-      return;
-    }
+  if (!purchaseItems.length) {
+    alert("Please add at least one item before submitting the purchase order.");
+    return;
+  }
 
-    if (!formValues.PONumber || !formValues.supplier || !formValues.transaction_date) {
-      alert("Please complete all required fields.");
-      return;
-    }
+  if (!formValues.supplier || !formValues.transaction_date) {
+    alert("Please complete all required fields.");
+    return;
+  }
 
+  try {
+    // 1️⃣ CREATE PURCHASE (NO RECEIPT YET)
     const newPurchase = {
-      PO: `PO-${formValues.PONumber}`,
       supplier: formValues.supplier,
-      warehouse:formValues.warehouse,
-
+      warehouse: formValues.warehouse,
       transaction_date: new Date(formValues.transaction_date).toISOString(),
       delivery_date: new Date().toISOString(),
-
-      items: purchaseItems.map((item) => ({
+      items: purchaseItems.map(item => ({
         name: item.brand,
         type: item.type,
         quantity: Number(item.quantity),
         unitPrice: Number(item.unitPrice),
+        discount:Number(item.discount),
+        shipping:Number(item.shipping),
+
       })),
-
-      merchandise_subtotal: merchandiseSubtotal,
-      shipping_subtotal: shippingSubtotal,
-      discount_subtotal: discountSubtotal,
-      total: totalPayment,
-
+        // ✅ PAYMENT TOTALS
+      merchandise_subtotal: Number(merchandiseSubtotal),
+      shipping_subtotal: Number(shippingSubtotal),
+      discount_subtotal: Number(discountSubtotal),
+      total_payment: Number(totalPayment),
+      
       approval_status: "Pending",
       delivery_status: "Order Placed",
-      payment_status: "N/A",
-      remarks: formValues.remarks,
-      status: "pending",
+      payment_status: "Unpaid",
+      remarks: formValues.remarks
     };
-    try {
-      const response = await fetch("http://localhost:5000/api/purchasing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newPurchase),
-      });
 
-      // --- HANDLE BACKEND ERRORS ---
-      if (!response.ok) {
-        let errorPayload;
+    const response = await fetch("http://localhost:5000/api/purchasing", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPurchase),
+    });
 
-        try {
-          errorPayload = await response.json();
-        } catch {
-          errorPayload = { message: await response.text() };
-        }
-
-        // DUPLICATE PO
-        if (
-          response.status === 409 ||
-          errorPayload?.code === "DUPLICATE_PO" ||
-          errorPayload?.code === "23505"
-        ) {
-          alert("Purchase Order number already exists. Please use a different PO number.");
-          return;
-        }
-
-        // VALIDATION ERRORS
-        if (response.status === 400) {
-          alert(errorPayload?.message || "Invalid purchase data. Please check your input.");
-          return;
-        }
-
-        throw new Error(errorPayload?.message || "Failed to save purchase");
-      }
-
-      const savedPurchase = await response.json();
-
-      onAddPurchase(savedPurchase);
-      handleClose();
-
-    } catch (err) {
-      console.error("Purchase submission error:", err);
-
-      if (err.message?.includes("fetch")) {
-        alert("Cannot connect to server. Please try again later.");
-      } else {
-        alert("An unexpected error occurred while saving the purchase order.");
-      }
+    if (!response.ok) {
+      const errorPayload = await response.json();
+      throw new Error(errorPayload?.message || "Failed to save purchase");
     }
-  };
+
+    const savedPurchase = await response.json(); 
+    // 👆 contains { id, po }
+
+    // 2️⃣ UPLOAD RECEIPT (OPTIONAL)
+    if (receiptFile) {
+      const receiptPath = await uploadReceipt(receiptFile, savedPurchase.po);
+
+      // 3️⃣ UPDATE PURCHASE WITH RECEIPT PATH
+      await fetch(`http://localhost:5000/api/purchasing/${savedPurchase.id}/receipt`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receipt_url: receiptPath }),
+      });
+    }
+
+    onAddPurchase(savedPurchase);
+    handleClose();
+
+  } catch (err) {
+    console.error("Purchase submission error:", err);
+    alert("An unexpected error occurred while saving the purchase order.");
+  }
+};
+
 
   /* ----------------------------- COMPUTED -------------------------------- */
 
@@ -189,7 +179,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     label: w.warehouse,
   }));
 
-  const paymentTotals = useMemo(() => {
+    const paymentTotals = useMemo(() => {
         return calculatePurchaseTotals(purchaseItems);
     }, [purchaseItems]);
 
@@ -199,7 +189,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
         discountSubtotal,
         totalPayment
     } = paymentTotals;
-
   /* ----------------------------- EFFECTS --------------------------------- */
 
   useEffect(() => {
@@ -244,22 +233,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
 
                     <form onSubmit={handleFormSubmit} className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div>
-                            <label htmlFor="PONumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                PO No.
-                            </label>
-                            <input 
-                                type="text"
-                                id="PONumber"
-                                name="PONumber"
-                                value={formValues.PONumber}
-                                onChange={(e) => handleInputChange(e.target.value, e.target.name)} // <-- handle change
-                                maxLength={6}
-                                pattern="\d{6}"
-                                title="Please enter a 6-digit number"
-                                className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
-                            />
-                            </div>
                             
                             {/* SUPPLIER FIELD */}
                             <CustomFormSelect
@@ -406,7 +379,32 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Order Discount</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                                <td className="py-3 px-4 text-end">
+                                                  {!isEditing ? (
+                                                    <span
+                                                      className="cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                                                      onClick={() => setIsEditing(true)}
+                                                    >
+                                                      {discount.toFixed(2)}
+                                                    </span>
+                                                  ) : (
+                                                    <input
+                                                      type="number"
+                                                      autoFocus
+                                                      min="0"
+                                                      step="0.01"
+                                                      value={discount}
+                                                      onChange={(e) => setDiscount(Number(e.target.value))}
+                                                      onBlur={() => setIsEditing(false)}
+                                                      className="
+                                                        w-28 text-end rounded-md border border-slate-300
+                                                        bg-white px-2 py-1 text-sm text-slate-700
+                                                        focus:outline-none focus:ring-2 focus:ring-blue-500
+                                                        dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200
+                                                      "
+                                                    />
+                                                  )}
+                                                </td>
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 font-medium dark:font-bold">Total Payment</td>

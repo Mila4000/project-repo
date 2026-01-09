@@ -82,7 +82,6 @@ function ReceivedItems() {
     className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
   };
 
-
   /* =========================
     OPTION HELPERS
   ========================= */
@@ -221,18 +220,18 @@ function ReceivedItems() {
     try {
       const res  = await fetch("http://localhost:5000/api/received-items");
       const data = await res.json();
-
+      console.log("data",data);
       const normalized = data.map(item => ({
         id: item.id,
-        po_number: item.purchased_orders.po,
+        po_number: item.purchased_order.po,
         purchased_orders_id: item.purchased_order_id,
         product_name: item.product_name,
-        supplier: item.purchased_orders.supplier.businessname,
-        transaction_date: item.purchased_orders.transaction_date,
-        delivery_status: item.purchased_orders.delivery_status,
+        supplier: item.purchased_order.supplier.businessname,
+        transaction_date: item.purchased_order.transaction_date,
+        delivery_status: item.purchased_order.delivery_status,
         expected_quantity: item.expected_quantity,
         quantity: item.quantity,
-        remarks: item.purchased_orders.remarks,
+        remarks: item.purchased_order.remarks,
       }));
 
       setItems(normalized);
@@ -252,7 +251,6 @@ function ReceivedItems() {
   ========================= */
   const handleAddReceivedItems = (newItem) => {
     setItems(prev => [...prev, ...newItem]);
-    console.log('Newly added received items:', newItem);
     fetchItems();
     setIsAddModalOpen(false);
   };

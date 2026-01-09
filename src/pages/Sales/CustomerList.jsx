@@ -263,7 +263,6 @@ function CustomerList() {
         }
     };
     const handleDelete = async(id)=>{
-      console.log("Id:",id);
       if (!confirm("Delete this purchase?")) return;
 
       try {

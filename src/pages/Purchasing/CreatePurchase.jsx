@@ -7,6 +7,9 @@ import RowLimiter from '../../components/filter/RowLimiter';
 import TablePagination from '../../components/pagination/TablePagination';
 import AddPurchaseOrderModal from '../../components/modals/AddPurchaseOrderModal';
 import EditPurchaseOrderModal from '../../components/modals/EditPurchaseOrderModal';
+import ViewPurchaseOrderModal from '../../components/modals/ViewPurchaseOrderModal';
+import ViewDeliveryReceiptModal from '../../components/modals/ViewDeliveryReceiptModal';
+
 
 const ALL_OPTION = 'All';
 
@@ -32,6 +35,10 @@ function CreatePurchase() {
     const [stats, setStats] = useState(null);
     const [orders, setOrders] = useState([]);
     const [suppliers, setSuppliers] = useState([]);
+    const [dataView, setDataView] = useState([]);
+    
+    const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -65,7 +72,15 @@ function CreatePurchase() {
     try {
         const res = await fetch("http://localhost:5000/api/purchasing");
         const data = await res.json();
-        setOrders(data);
+        const ordersWithTotals = data.map(order => ({
+        ...order,
+        total_quantity: order.purchased_order_item?.reduce(
+            (sum, item) => sum + Number(item.quantity || 0),
+            0
+        )
+        }));
+
+        setOrders(ordersWithTotals);
     } catch (err) {
         console.error("Failed to fetch purchased orders", err);
     }
@@ -92,10 +107,26 @@ function CreatePurchase() {
     setOrderToEdit(order);
     setIsEditModalOpen(true);
     };
+    const handleView = (order) => {
+    setDataView(order);
+    setIsEditModalOpen(true);
+    };
+    const openViewModal = (order) => {
+        setDataView(order);
+        setIsViewModalOpen(true);
+    };
+     const closeViewModal = () => {
+        setDataView(null);
+        setIsViewModalOpen(false);
+    };
 
     const handleCloseEditModal = () => {
     setIsEditModalOpen(false);
     setOrderToEdit(null);
+    };
+    const handleCloseViewModal = () => {
+    setIsEditModalOpen(false);
+    setDataView(null);
     };
 
     const handleAddNewPurchase = (newPurchase) => {
@@ -300,10 +331,12 @@ function CreatePurchase() {
     ======================= */
 
     useEffect(() => {
-    fetchPurchases();
-    fetchSuppliers();
-    fetchStats();
-    }, []);
+    if (!isEditModalOpen && !isViewModalOpen && !isModalOpen) {
+        fetchPurchases();
+        fetchSuppliers();
+        fetchStats();
+    }
+    }, [isEditModalOpen, isViewModalOpen, isModalOpen]);
     
     return (
         <div>
@@ -339,6 +372,8 @@ function CreatePurchase() {
                     onEdit={handleEdit}
                     onDelete={handleDeletePurchase} 
                     suppliers={suppliers}
+                    onView={handleView}
+                    onViewReceipt={openViewModal}
                 />
 
                 <div className = "flex items-center justify-between mb-3">
@@ -370,7 +405,17 @@ function CreatePurchase() {
                 orderData={orderToEdit} 
                 onSave={handleSaveEdit}
             />
-
+             {/* View Purchase Order Modal */}
+            <ViewPurchaseOrderModal 
+                isOpen={isEditModalOpen}
+                onClose={handleCloseViewModal}
+                displayData={dataView}
+            /> 
+            <ViewDeliveryReceiptModal
+                isOpen={isViewModalOpen}
+                onClose={closeViewModal}
+                displayData={dataView}
+            />
         </div>
     );
 }

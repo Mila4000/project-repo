@@ -30,12 +30,10 @@ function AddCustomerModal({ isOpen, onClose }) {
         })); 
     };
     const handleCustomerTypeChange = (value, name) => {
-        console.log(name, ",", value)
         setFormValues(prev => ({
             ...prev,
             [name]: value
         }));
-        console.log("Ctype changed",formValues);
     };
     const handleNumberChanges = (e) => { 
     const { name, value } = e.target;
@@ -51,7 +49,6 @@ function AddCustomerModal({ isOpen, onClose }) {
 
     const handleSubmit =async (e) => {
         e.preventDefault();
-        console.log("Data to be added",formValues);
         try {
             const res=await fetch(
                 "http://localhost:5000/api/customers",
