@@ -15,7 +15,6 @@ function ViewReceiptModal({isOpen, displayData, onClose}) {
         setIsPayOpen(false);
         onClose();
     }
-    console.log("Display Data in ViewReceiptModal",displayData)
     if (!isOpen) return null;
 
   return (

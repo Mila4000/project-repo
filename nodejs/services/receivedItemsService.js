@@ -30,13 +30,11 @@ export const getAllReceivedItems = async () => {
       )
     `)
     .eq("purchased_order.approval_status", "Approved");
-    console.log("data",data);
   if (error) throw error;
   return data;
 };
 
 export const createReceivedItem = async (payload) => {
-    console.log("Received Item Payload:", payload);
 
     const results = [];
 
@@ -99,12 +97,7 @@ export const createReceivedItem = async (payload) => {
 };
 
 export const updateReceivedItem = async (id, payload) => {
-console.log('Update Payload:', {
-  id,
-  product_name: payload.product_name,
-  actual_quantity: payload.actual_quantity,
-  expected_quantity: payload.expected_quantity,
-});
+
   const updateData = {
     product_name: payload.product_name,
     quantity: payload.quantity,
@@ -122,7 +115,6 @@ console.log('Update Payload:', {
 };
 
 export const deleteReceivedItem = async (id) => {
-    console.log("Deleting Received Item with ID:", id);
     const { error } = await supabase
         .from('purchased_order_item')
         .delete()

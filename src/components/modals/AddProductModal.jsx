@@ -4,14 +4,14 @@ import CustomFormSelect from '../filter/CustomFormSelect';
 import AddSupplierPriceModal from './AddSupplierPriceModal'; 
 import EditSupplierModal from './EditSupplierModal'; 
 
-const warehouseData = [{ warehouse: 'Saog' }, { warehouse: 'Meycuayan' }, { warehouse: 'Quezon City' }];
+const warehouseData = [{ warehouse_id:1,warehouse: 'Pata Storage' }, { warehouse_id:2,warehouse: 'Saog' }, { warehouse_id:3,warehouse: 'Kalakal' }];
 
 function AddProductModal({ isOpen, onClose, supplierOptions }) {
     const [formValues, setFormValues] = useState({
         name: '',
-        quantity: '',
+        threshold_count: '',
         price: '',
-        warehouse: null,
+        warehouse_id: null,
         remarks: '',
     });
 
@@ -68,7 +68,6 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
     
     const handleFormSubmit = async(e) => {
         e.preventDefault();
-        console.log("Final Data:", { ...formValues, pricing: supplierPrices });
         const newStocks={
             ...formValues,pricing: supplierPrices 
         }
@@ -91,7 +90,7 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
         onClose();
     };
 
-    const warehouseOptions = warehouseData.map(d => ({ value: d.warehouse, label: d.warehouse }));
+    const warehouseOptions = warehouseData.map(d => ({ value: d.warehouse_id, label: d.warehouse }));
 
     return (
         <>
@@ -123,9 +122,9 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Threshold Count</label>
                                     <input type="number"
-                                    id="quantity"
-                                    name="quantity"
-                                    value={formValues.quantity}
+                                    id="threshold_count"
+                                    name="threshold_count"
+                                    value={formValues.threshold_count}
                                     onChange={handleInputChange}
                                     placeholder="Enter threshold count"
                                     className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500" />
@@ -144,11 +143,11 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
 
                             <div className="space-y-3">
                                 <CustomFormSelect 
-                                    label="Warehouse" 
-                                    name="warehouse" 
-                                    options={warehouseOptions} 
-                                    initialValue={formValues.warehouse} 
-                                    onSelect={handleCustomForm} 
+                                    label="Warehouse"
+                                    name="warehouse_id"
+                                    options={warehouseOptions}
+                                    initialValue={formValues.warehouse_id}
+                                    onSelect={handleCustomForm}
                                 />
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Remarks</label>

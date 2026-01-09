@@ -71,7 +71,6 @@ function DeliveryStatusModal({
             setIsSubmitting(false);
         }
     };
-    console.log("Status History",statusHistory)
     if (!isOpen) return null;
 
     return (

@@ -41,7 +41,6 @@ function PayDeliveryNowModal({ isOpen, onClose , displayData}) {
         setAmountPay("");
         setPaymentMethod("");
 
-        console.log("Payment Submitted", payment);
         onClose();
     } catch (error) {
         console.error(error);

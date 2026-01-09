@@ -12,7 +12,6 @@ export const getAllReceivedItems = async (req, res) => {
 
 export const createReceivedItem = async (req, res) => {
   try {
-    console.log("Received Item Request Body:", req.body);
     const data = await receivedItemsService.createReceivedItem(req.body);
     res.status(201).json(data);
     } catch (err) {
@@ -58,7 +57,6 @@ export const getReceivedItemsStats = async (req, res) => {
 export const bulkSavePurchaseItems = async (req, res) => {
   try {
     const { items } = req.body;
-    console.log("Items Content",items)
     if (!Array.isArray(items)) {
       return res.status(400).json({ message: "Items must be an array" });
     }

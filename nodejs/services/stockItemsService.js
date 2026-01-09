@@ -25,23 +25,20 @@ export const getAllStockItems = async () => {
         )
     `);
     if (error) throw error;
-    console.log(data);
     return data;
 }
 export const createStockItem = async (stock) => {
-    console.log("Stock",stock);
-    
+    console.log(stock);
     const {data, error} = await supabase
         .from("items")
         .insert([{
-            product_name:stock.name,
+            item_name:stock.name,
             quantity:stock.quantity,
-            unit_price:unitPrice,
-            line_total: stock.quantity * unitPrice,
-            type:stock.type,
-            expected_quantity:stock.expected_quantity,
-            warehouse:stock.warehouse,
-            item_code:"FLD_FR_TST",//replace this soon
+            suggested_retail_price:stock.price,
+            item_code:"FLD_FR_TST",
+            quantity:1,
+            whouse_id:stock.warehouse_id,
+            threshold_count:stock.threshold_count,
             status:"In Stock"
         }])
         .select()
@@ -52,7 +49,7 @@ export const createStockItem = async (stock) => {
 
 export const deleteStockItem = async (id) => {
   const { error } = await supabase
-    .from("purchased_order_items")
+    .from("items")
     .delete()
     .eq("id", id);
   if (error) throw error;

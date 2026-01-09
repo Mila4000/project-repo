@@ -220,7 +220,6 @@ function ReceivedItems() {
     try {
       const res  = await fetch("http://localhost:5000/api/received-items");
       const data = await res.json();
-      console.log("data",data);
       const normalized = data.map(item => ({
         id: item.id,
         po_number: item.purchased_order.po,

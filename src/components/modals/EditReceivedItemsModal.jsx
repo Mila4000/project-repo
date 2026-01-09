@@ -34,7 +34,6 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
             [name]: value
         }));
     };
-    console.log("Form Data", formData);
     const handleSubmit = (e) => {
     e.preventDefault();
     const payload = {

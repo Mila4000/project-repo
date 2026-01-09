@@ -5,6 +5,7 @@ import * as inventoryCountingController from "../controllers/inventoryCountingCo
 const router = express.Router();
 
 router.get("/", inventoryCountingController.getInventoryCounting);
+router.get("/stats", inventoryCountingController.getCountingStats);
 router.post("/", inventoryCountingController.addInventoryCounting);
 
 export default router;

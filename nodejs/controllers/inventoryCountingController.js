@@ -16,4 +16,11 @@ export const addInventoryCounting = async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch customers' });
     }
 };
-
+export const getCountingStats = async (req, res) => {
+    try {
+        const count = await inventoryCountingService.getCountingStats();
+        res.status(200).json(count);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch customers' });
+    }
+};

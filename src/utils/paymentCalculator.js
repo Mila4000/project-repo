@@ -4,7 +4,6 @@ export const calculatePurchaseTotals = (items = []) => {
   let shippingSubtotal = 0;
   let discountSubtotal = 0;
   let totalQuantity = 0;
-  console.log("Items in calculate",items)
   for (const item of items) {
     const qty = Number(item.quantity) || 0;
 
@@ -16,7 +15,6 @@ export const calculatePurchaseTotals = (items = []) => {
     const discount = Number(item.discount) || 0;
 
     merchandiseSubtotal += qty * price;
-    console.log("Mer_sub",merchandiseSubtotal);
     shippingSubtotal += shipping;
     discountSubtotal += discount;
     totalQuantity += qty;

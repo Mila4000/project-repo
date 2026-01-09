@@ -43,7 +43,6 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
     const getSupplierById = (id) => {
         return suppliers.find(supplier => supplier.id === id);
     }
-    console.log("Orders: ",orders)
 
     return (
         <div className="overflow-x-auto pb-6 mt-4">

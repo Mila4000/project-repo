@@ -58,7 +58,6 @@ function CreateInvoiceModal({ isOpen, onClose }) {
     
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        console.log("Form Values:", { ...formValues, items: purchaseItems });
         onClose();
     };
 

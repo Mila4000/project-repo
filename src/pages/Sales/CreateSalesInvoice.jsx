@@ -309,7 +309,6 @@ function CreateSalesInvoice() {
     };
 
     const handleSaveEdit = (updatedOrder) => {
-      console.log("Saving updated order:", updatedOrder);
       handleCloseEditModal();
     };
 

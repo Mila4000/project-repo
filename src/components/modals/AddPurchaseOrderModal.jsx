@@ -87,7 +87,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     setReceiptFile(file);
     setReceiptFileName(file ? file.name : "No file chosen");
   };
-  console.log("Purchase Item added", purchaseItems)
   /* ----------------------------- SUBMIT ---------------------------------- */
 
   const handleFormSubmit = async (e) => {

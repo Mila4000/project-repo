@@ -36,7 +36,6 @@ export const getAllPurchases = async () => {
 
 
 export const createPurchase = async (payload) => {
-  console.log("Payload",payload)
   const {
   supplier,
   transaction_date,
@@ -313,7 +312,6 @@ const { data, error } = await supabase
   return data;
 }
 export const updateDeliveryStatus = async (id, status, remark) => {
-  console.log("ID,Status,Remark",id,status,remark);
   // 1️⃣ Update current delivery status
   const { error: updateError } = await supabase
     .from("purchased_order")

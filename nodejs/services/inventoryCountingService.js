@@ -41,3 +41,11 @@ export const addInvCounting = async (countData) => {
 
   return invCount;
 };
+export const getCountingStats = async () => {
+  const { count, error } = await supabase
+    .from('inventory_counting')
+    .select('*', { count: 'exact', head: true });
+
+  if (error) throw error;
+  return count;
+};

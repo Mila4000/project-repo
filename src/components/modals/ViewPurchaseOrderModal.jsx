@@ -127,7 +127,6 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     setIsEditItemModalOpen(false);
     };
     const handleDeliveryStatusModal = () =>{
-        console.log("Delivery updated");
         setIsPayOpen(true);
     };
     const handleRemoveItem = (id) => {
@@ -140,7 +139,6 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     const paymentTotals = useMemo(() => {
         return calculatePurchaseTotals(purchaseItems);
     }, [purchaseItems]);
-    console.log("Payment Totals",paymentTotals)
     const {
         merchandiseSubtotal,
         shippingSubtotal,
@@ -154,7 +152,6 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     };
 
     const handleSaveChanges = async() => {
-        console.log("Saving Purchase Items",purchaseItems)
         try {
             const res= await fetch("http://localhost:5000/api/received-items/view/bulk-save", {
             method: "PUT",
@@ -196,7 +193,6 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
         discount: Number(item.discount ?? 0),
     };
 
-    console.log("Restructured Item", restructuredItem);
 
     setPurchaseItems(prev => [
         ...prev,
@@ -213,8 +209,6 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     const receiptPublicUrl = getReceiptPublicUrl(displayData?.receipt_url);
     /* ----------------------------- GUARD ----------------------------------- */
     if (!isOpen) return null;
-    console.log("Display Data:", displayData);
-    console.log("Purchase Items:", purchaseItems);
     /* ----------------------------- JSX ------------------------------------- */
     return (
     <>

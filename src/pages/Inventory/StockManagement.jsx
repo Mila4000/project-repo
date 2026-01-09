@@ -10,6 +10,21 @@ import AddStockTransferModal from '../../components/modals/AddStockTransferModal
 function StockManagement() {
     const [activeTab, setActiveTab] = useState('profile');
     const [stats, setStats]= useState([]);
+     // --- MODAL STATES ---
+   
+   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+    const [isAddTransferModalOpen, setIsAddTransferModalOpen] = useState(false);
+    
+    // --- PAGINATION & SHARED STATE ---
+    const [rowLimit, setRowLimit] = useState(5);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalItems, setTotalItems] = useState(0);
+
+    const totalPages = Math.ceil(totalItems / rowLimit);
+    const iconProps = { className: 'w-4 h-4 text-slate-500 dark:text-slate-500' };
+
+
+     
     const fetchStats = async () => {
         try {
             const res = await fetch("http://localhost:5000/api/stock/stats");
@@ -20,20 +35,9 @@ function StockManagement() {
         }
     };
     useEffect(() => {
+        if(!isAddProductModalOpen){
         fetchStats();
-    }, []);
-
-    // --- MODAL STATES ---
-    const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
-    const [isAddTransferModalOpen, setIsAddTransferModalOpen] = useState(false);
-    
-    // --- PAGINATION & SHARED STATE ---
-    const [rowLimit, setRowLimit] = useState(5);
-    const [currentPage, setCurrentPage] = useState(1);
-    const [totalItems, setTotalItems] = useState(0);
-
-    const totalPages = Math.ceil(totalItems / rowLimit);
-    const iconProps = { className: 'w-4 h-4 text-slate-500 dark:text-slate-500' };
+    }}, [isAddProductModalOpen]);
 
     const handleDataChange = useCallback((count) => {
         setTotalItems(count);
@@ -90,9 +94,9 @@ function StockManagement() {
                                     rowLimit={rowLimit}
                                     currentPage={currentPage}
                                     onTotalDataChange={handleDataChange}
-                                    // Trigger Product Modal
                                     onAddProductClick={() => setIsAddProductModalOpen(true)}
                                     iconProps={iconProps}
+                                    onAddProductClose={isAddProductModalOpen}
                                 />
                             </div>
                         )}

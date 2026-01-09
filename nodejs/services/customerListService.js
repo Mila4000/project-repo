@@ -78,9 +78,6 @@ export const getCustomerStats = async() =>{
     .eq("status", "Inactive");
 
   if (inactiveErr) throw inactiveErr;
-    console.log("Total:", totalCustomerCount);
-    console.log("Active:", activeCustomerCount);
-    console.log("Inactive:", inactiveCustomerCount);
   return {
     total: totalCustomerCount,
     active: activeCustomerCount,

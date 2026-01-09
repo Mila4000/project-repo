@@ -23,7 +23,7 @@ const StocksData = [
 
 const ALL_OPTION = 'All';
 
-function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, iconProps }) {
+function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, iconProps,onAddProductClose }) {
     // These values match the first item in the options array below
     const [warehouseFilter, setWarehouseFilter] = useState('warehouse');
     const [statusFilter, setStatusFilter] = useState('status');
@@ -61,9 +61,10 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
 
     
       useEffect(() => {
+    if (!onAddProductClose) {
         fetchItems();
-      }, []);
-      console.log(items);
+    }
+    }, [onAddProductClose]);
     // 1. Extract Options (Strings only to match your CustomSelect components)
     const warehouseOptions = useMemo(() => {
         const unique = [...new Set(items.map(item => item.warehouse))];
@@ -138,7 +139,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                     className="flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg hover:shadow-lg transition-all cursor-pointer active:scale-95"
                 >
                     <Plus className="w-4 h-4" />
-                    <span className="text-sm font-medium">Add Product</span>
+                    <span className="text-sm font-medium">Add Item</span>
                 </button>
             </div>
 

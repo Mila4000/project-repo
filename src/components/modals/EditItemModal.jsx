@@ -11,7 +11,6 @@
     ];
 
     function EditItemModal({isOpen, onClose, editingItem, onSaveLocalItem }) {
-        console.log(editingItem);
         /* =======================
         ITEM FORM STATE
         ======================= */
@@ -105,7 +104,6 @@
             discount: Number(itemForm.discount),
             line_total: Number(itemForm.quantity * itemForm.unitPrice),
         };
-        console.log(finalItem);
         onSaveLocalItem(finalItem);
         };
         /* =======================
