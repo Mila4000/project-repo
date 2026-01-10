@@ -12,7 +12,13 @@ import inventoryCountRouter from "./routes/inventory.js"
 const app = express();
 const PORT = process.env.nodejs_port || 5000;
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:5173",
+    "https://jabmeats.netlify.app"
+  ],
+  credentials: true
+}));
 app.use(express.json());
 
 app.get("/", (req, res) => {
