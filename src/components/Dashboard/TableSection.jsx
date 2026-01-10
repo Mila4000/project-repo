@@ -66,19 +66,52 @@ const topProducts = [
     change: '+15%',
   },
 ];
-function TableSection() {
-    const getStatusColor = (status) => {
-        switch (status) {
-            case "completed":
-                return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
-            case "pending":
-                return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-            case "cancelled":
-                return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-            default:
-                return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
-        }
+function TableSection({ordertable}) {
+    console.log("Order table",ordertable)
+
+    
+    const getApprovalStatusColor = (status) => {
+      switch (status) {
+        case "Pending":
+          return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+        case "Approved":
+          return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+        case "Rejected":
+          return "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400";
+        default:
+          return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
+      }
     };
+
+    const getDeliveryStatusColor = (status) => {
+      switch (status) {
+        case "Order Placed":
+          return "bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-400";
+        case "Out for Delivery":
+          return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+        case "Delivered":
+          return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+        case "Overdue":
+        case "Overdue (X Days)":
+          return "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400";
+        default:
+          return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
+      }
+    };
+
+    const getPaymentStatusColor = (status) => {
+      switch (status) {
+        case "Paid":
+          return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+        case "Partially Paid":
+          return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+        case "Unpaid":
+          return "bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400";
+        default:
+          return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
+      }
+    };
+
 
   return (
     <div className="space-y-6">
@@ -90,7 +123,7 @@ function TableSection() {
               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Recent Orders</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400">Latest customer orders</p>
             </div>
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button>
+            {/* <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">View All</button> */}
           </div>
         </div>
 
@@ -100,45 +133,65 @@ function TableSection() {
             <thead>
                 <tr>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600">Order ID</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600">Product</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600">Supplier</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600">Amount</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600">Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600">Date</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600">Approval Status</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600">Payment Status</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600">Delivery Status</th>
                 </tr>
                 </thead>
                 <tbody>
-                  {recentOrders.map((order, index) => {
+                  {ordertable.map((order, index) => {
                     return (
                       <tr className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4" key={index}>
                           <span className="text-sm font-medium text-blue">
-                              {order.id}
+                              {order.po}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                              {order.customer}
+                              {order.supplier.businessname}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                              {order.product}
+                              ₱{order.total}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                              {order.amount}
+                              {order.transaction_date}
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`text-slate-400 dark:text-white font-medium text-xs px-3 py-1 rounded-full ${getStatusColor(order.status)}`}>
-                             {/* {order.status} */}
-                            {order.date}
+                          <span
+                            className={`font-medium text-xs px-3 py-1 rounded-full
+                              ${getApprovalStatusColor(order.approval_status)}
+                            `}
+                          >
+                            {order.approval_status}
                           </span>
                         </td>
+
                         <td className="p-4">
-                          <span className="text-sm text-slate-800 dark:text-white">
-                              <MoreHorizontal className="w-4 h-4"/>
+                          <span
+                            className={`font-medium text-xs px-3 py-1 rounded-full
+                              ${getPaymentStatusColor(order.payment_status)}
+                            `}
+                          >
+                            {order.payment_status}
+                          </span>
+                        </td>
+
+                        <td className="p-4">
+                          <span
+                            className={`font-medium text-xs px-3 py-1 rounded-full
+                              ${getDeliveryStatusColor(order.delivery_status)}
+                            `}
+                          >
+                            {order.delivery_status}
                           </span>
                         </td>
                       </tr>

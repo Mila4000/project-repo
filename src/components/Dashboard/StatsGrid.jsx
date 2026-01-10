@@ -1,50 +1,78 @@
-import { ArrowDownRight, ArrowRight, ArrowUpRight, DollarSign, Eye, ShoppingCart, Users } from 'lucide-react'
-import React from 'react'
-
-const stats = [
-  {
-    title: "Total Revenue",
-    value: "$45,231.89",
-    change: "+12.5%",
-    trend: "up",
-    icon: DollarSign,
-    color: "from-green-500 to-teal-600",
-    bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
-    textColor: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    title: "Active Users",
-    value: "8,123",
-    change: "+8.2%",
-    trend: "up",
-    icon: Users,
-    color: "from-blue-500 to-indigo-600",
-    bgColor: "bg-blue-50 dark:bg-blue-900/20",
-    textColor: "text-blue-600 dark:text-blue-400",
-  },
-  {
-    title: "Total Orders",
-    value: "1,245",
-    change: "+15.1%",
-    trend: "up",
-    icon: ShoppingCart,
-    color: "from-purple-500 to-pink-600",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    textColor: "text-purple-600 dark:text-purple-400",
-  },
-  {
-    title: "Page Views",
-    value: "32,450",
-    change: "-2.3%",
-    trend: "down",
-    icon: Eye,
-    color: "from-orange-500 to-red-600",
-    bgColor: "bg-orange-50 dark:bg-orange-900/20",
-    textColor: "text-orange-600 dark:text-orange-400",
-  },
-];
+import React, { useEffect, useState } from "react";
+import {
+  ArrowDownRight,
+  ArrowUpRight,
+  DollarSign,
+  Eye,
+  ShoppingCart,
+  Users,
+} from "lucide-react";
 
 function StatsGrid() {
+  
+  const [statsData, setStatsData] = useState({
+    activeCustomers: {
+      value: 0,
+      change: "0%",
+      trend: "up",
+    },
+    totalOrders: {
+      value: 0,
+      change: "0%",
+      trend: "up",
+    },
+  });
+  
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/stats`)
+      .then(res => res.json())
+      .then(data => setStatsData(data))
+      .catch(err => console.error("Failed to fetch stats", err));
+  }, []);
+
+  console.log("stats data",statsData)
+  const stats = [
+    {
+      title: "Total Revenue",
+      value: "₱45,231.89",
+      change: "+12.5%",
+      trend: "up",
+      icon: DollarSign,
+      color: "from-green-500 to-teal-600",
+      bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      title: "Active Customers",
+      value: statsData.activeCustomers.value.toLocaleString(),
+      change: statsData.activeCustomers.change,
+      trend: statsData.activeCustomers.trend,
+      icon: Users,
+      color: "from-blue-500 to-indigo-600",
+      bgColor: "bg-blue-50 dark:bg-blue-900/20",
+      textColor: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      title: "Total Orders",
+      value: statsData.totalOrders.value.toLocaleString(),
+      change: statsData.totalOrders.change,
+      trend: statsData.totalOrders.trend,
+      icon: ShoppingCart,
+      color: "from-purple-500 to-pink-600",
+      bgColor: "bg-purple-50 dark:bg-purple-900/20",
+      textColor: "text-purple-600 dark:text-purple-400",
+    },
+    {
+      title: "Page Views",
+      value: "32,450",
+      change: "-2.3%",
+      trend: "down",
+      icon: Eye,
+      color: "from-orange-500 to-red-600",
+      bgColor: "bg-orange-50 dark:bg-orange-900/20",
+      textColor: "text-orange-600 dark:text-orange-400",
+    },
+  ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
       {stats.map((stats, index) => {

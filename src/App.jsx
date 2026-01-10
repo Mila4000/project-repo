@@ -29,7 +29,7 @@ function App() {
     <Routes>
       <Route path="/" element={<MainLayout />}>
         {/* Dashboard */}
-        <Route path="" element={<DashboardPage />} />
+        <Route index element={<DashboardPage />} />
 
         {/* Purchasing */}
         <Route path="purchasing/createpurchase" element={<CreatePurchase />} />
