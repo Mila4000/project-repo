@@ -25,7 +25,7 @@ function PayDeliveryNowModal({ isOpen, onClose , displayData}) {
 
     try {
         const response = await fetch(
-        `http://localhost:5000/api/purchasing/payment/${displayData.id}`,
+        `${import.meta.env.VITE_API_URL}/purchasing/payment/${displayData.id}`,
         {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },

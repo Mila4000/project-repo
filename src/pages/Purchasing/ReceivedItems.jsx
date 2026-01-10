@@ -165,7 +165,7 @@ function ReceivedItems() {
     if (!confirm("Delete this received item?")) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/received-items/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/received-items/${id}`, {
         method: 'DELETE',
       });
 
@@ -180,7 +180,7 @@ function ReceivedItems() {
   const handleSaveEdit = async (updatedItem) => {
     try {
       const res = await fetch(
-        `http://localhost:5000/api/received-items/${updatedItem.id}`,
+        `${import.meta.env.VITE_API_URL}/received-items/${updatedItem.id}`,
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
@@ -208,7 +208,7 @@ function ReceivedItems() {
   ========================= */
   const fetchStats = async () => {
     try {
-      const res  = await fetch("http://localhost:5000/api/received-items/stats");
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/received-items/stats`);
       const data = await res.json();
       setStats(data);
     } catch (err) {
@@ -218,7 +218,7 @@ function ReceivedItems() {
 
   const fetchItems = async () => {
     try {
-      const res  = await fetch("http://localhost:5000/api/received-items");
+      const res  = await fetch(`${import.meta.env.VITE_API_URL}/received-items`);
       const data = await res.json();
       const normalized = data.map(item => ({
         id: item.id,

@@ -18,7 +18,7 @@ function InventoryCountingStatsGrid() {
   useEffect(() => {
     const fetchCount = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/inventory/stats");
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/inventory/stats`);
         const count= await res.json();
         setTotalCounting(count ?? 0);
       } catch (err) {

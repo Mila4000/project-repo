@@ -32,7 +32,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
     
     const fetchItems = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/stock");
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/stock`);
             const data = await res.json();
 
             const normalized = data.map(item => ({
@@ -99,7 +99,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
         if (!confirm("Delete this stock?")) return;
         try {
             const res = await fetch(
-            `http://localhost:5000/api/stock/${id}`,
+            `${import.meta.env.VITE_API_URL}/stock/${id}`,
             { method: "DELETE" }
             );
 

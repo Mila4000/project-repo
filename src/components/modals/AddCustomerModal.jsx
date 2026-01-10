@@ -51,7 +51,7 @@ function AddCustomerModal({ isOpen, onClose }) {
         e.preventDefault();
         try {
             const res=await fetch(
-                "http://localhost:5000/api/customers",
+                `${import.meta.env.VITE_API_URL}/customers`,
                 {
                     method:"POST", 
                     headers:{"Content-Type": "application/json"},

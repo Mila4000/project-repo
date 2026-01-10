@@ -99,7 +99,7 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
     ========================= */
     const fetchItems = async () => {
     try {
-        const res  = await fetch("http://localhost:5000/api/received-items");
+        const res  = await fetch(`${import.meta.env.VITE_API_URL}/received-items`);
         const data = await res.json();
 
         const normalized = data.map(item => ({
@@ -253,7 +253,7 @@ function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
 
     try {
         const response = await fetch(
-        "http://localhost:5000/api/received-items",
+        `${import.meta.env.VITE_API_URL}/received-items`,
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },

@@ -37,7 +37,7 @@ function AddSupplierModal({ isOpen, onClose, onAddSupplier }) {
             status: "Active" 
         };
         try{
-            const response = await fetch("http://localhost:5000/api/supplier", {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/supplier`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

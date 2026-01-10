@@ -55,7 +55,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     const handleReject = async(id) => {
        try {
         const response = await fetch(
-            `http://localhost:5000/api/purchasing/reject/${id}`,
+            `${import.meta.env.VITE_API_URL}/purchasing/reject/${id}`,
             {
             method: "PATCH",
             headers: {
@@ -74,7 +74,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     const handleApprove = async(id) => {
          try {
         const response = await fetch(
-            `http://localhost:5000/api/purchasing/approve/${id}`,
+            `${import.meta.env.VITE_API_URL}/purchasing/approve/${id}`,
             {
             method: "PATCH",
             headers: {
@@ -153,7 +153,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
 
     const handleSaveChanges = async() => {
         try {
-            const res= await fetch("http://localhost:5000/api/received-items/view/bulk-save", {
+            const res= await fetch(`${import.meta.env.VITE_API_URL}/received-items/view/bulk-save`, {
             method: "PUT",
             headers: {
                 "Content-Type": "application/json",

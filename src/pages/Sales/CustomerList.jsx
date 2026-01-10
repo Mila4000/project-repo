@@ -164,7 +164,7 @@ function CustomerList() {
     const [stats,setStats] = useState([]);
     const fetchCustomers = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/customers');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/customers`);
         const data = await res.json();
         setOrders(data);
       } catch (error) {
@@ -173,7 +173,7 @@ function CustomerList() {
     };
     const fetchStats = async () => {
     try {
-        const res = await fetch("http://localhost:5000/api/customers/stats");
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/customers/stats`);
         const data = await res.json();
         setStats(data);
     } catch (err) {
@@ -238,7 +238,7 @@ function CustomerList() {
     const handleSaveEdit = async(updatedData) => {
         try {
           const res = await fetch(
-            `http://localhost:5000/api/customers/${updatedData.id}`,
+            `${import.meta.env.VITE_API_URL}/customers/${updatedData.id}`,
             {
               method:"PUT",
               headers:{
@@ -267,7 +267,7 @@ function CustomerList() {
 
       try {
           const res = await fetch(
-          `http://localhost:5000/api/customers/${id}`,
+          `${import.meta.env.VITE_API_URL}/customers/${id}`,
           { method: "DELETE" }
           );
 
