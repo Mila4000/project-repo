@@ -10,7 +10,7 @@ import inventoryCountRouter from "./routes/inventory.js"
 
 
 const app = express();
-const PORT = process.env.nodejs_port || 5000;
+const PORT = process.env.PORT || 5000;
 
 app.use(cors({
   origin: [
