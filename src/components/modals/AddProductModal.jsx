@@ -73,7 +73,7 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
         }
         try {
             const res = await fetch(
-                `${import.meta.env.VITE_API_URL}/stock`,
+                `${import.meta.env.VITE_API_URL}/api/stock`,
                 {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

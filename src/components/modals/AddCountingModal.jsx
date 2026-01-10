@@ -76,7 +76,7 @@ function AddCountingModal({ isOpen, onClose }) {
         
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/inventory`,
+                `${import.meta.env.VITE_API_URL}/api/inventory`,
                 {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },

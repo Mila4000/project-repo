@@ -16,7 +16,7 @@ function AddSupplierPriceModal({ isOpen, onClose, onAdd }) {
     const [supplier,setSupplier] = useState([])
     const fetchSuppliers = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/supplier`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`);
         const object = await res.json();
         setSupplier(object);
       } catch (err) {

@@ -130,7 +130,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
       remarks: formValues.remarks
     };
 
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/purchasing`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newPurchase),
@@ -149,7 +149,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
       const receiptPath = await uploadReceipt(receiptFile, savedPurchase.po);
 
       // 3️⃣ UPDATE PURCHASE WITH RECEIPT PATH
-      await fetch(`${import.meta.env.VITE_API_URL}/purchasing/${savedPurchase.id}/receipt`, {
+      await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing/${savedPurchase.id}/receipt`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ receipt_url: receiptPath }),
@@ -196,7 +196,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     const fetchSuppliers = async () => {
       setLoadingSuppliers(true);
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/supplier`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`);
         const data = await res.json();
         setSuppliers(data);
       } catch (err) {

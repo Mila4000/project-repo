@@ -60,7 +60,7 @@ function CreatePurchase() {
 
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/purchasing/stats`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing/stats`);
             const data = await res.json();
             setStats(data);
         } catch (err) {
@@ -70,7 +70,7 @@ function CreatePurchase() {
 
     const fetchPurchases = async () => {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/purchasing`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`);
         const data = await res.json();
         const ordersWithTotals = data.map(order => ({
         ...order,
@@ -88,7 +88,7 @@ function CreatePurchase() {
 
     const fetchSuppliers = async () => {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/supplier`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`);
         const data = await res.json();
         setSuppliers(data);
     } catch (err) {
@@ -282,7 +282,7 @@ function CreatePurchase() {
     const handleSaveEdit = async (updatedOrder) => {
     try {
         const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/purchasing/${updatedOrder.po}`,
+        `${import.meta.env.VITE_API_URL}/api/purchasing/${updatedOrder.po}`,
         {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -312,7 +312,7 @@ function CreatePurchase() {
 
     try {
         const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/purchasing/${po}`,
+        `${import.meta.env.VITE_API_URL}/api/purchasing/${po}`,
         { method: "DELETE" }
         );
 

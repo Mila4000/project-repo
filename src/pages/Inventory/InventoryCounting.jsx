@@ -60,7 +60,7 @@ function InventoryCounting() {
     const [items,setItems]=useState([]);
     const fetchInventoryItem = async () =>{
         try {
-             const res = await fetch(`${import.meta.env.VITE_API_URL}/inventory`);
+             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/inventory`);
             const data = await res.json();
             setItems(data);
         } catch (error) {

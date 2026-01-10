@@ -27,7 +27,7 @@ function StockManagement() {
      
     const fetchStats = async () => {
         try {
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/stock/stats`);
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/stock/stats`);
             const data = await res.json();
             setStats(data);
         } catch (err) {

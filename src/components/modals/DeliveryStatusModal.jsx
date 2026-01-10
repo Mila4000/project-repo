@@ -21,7 +21,7 @@ function DeliveryStatusModal({
             setLoadingHistory(true);
             try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/purchasing/delivery-status-history/${purchaseOrderId}`
+                `${import.meta.env.VITE_API_URL}/api/purchasing/delivery-status-history/${purchaseOrderId}`
             );
 
             const data = await response.json();
@@ -42,7 +42,7 @@ function DeliveryStatusModal({
 
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/purchasing/update-delivery-status/${purchaseOrderId}`,
+                `${import.meta.env.VITE_API_URL}/api/purchasing/update-delivery-status/${purchaseOrderId}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

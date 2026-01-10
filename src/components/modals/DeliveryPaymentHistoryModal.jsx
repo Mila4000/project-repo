@@ -30,7 +30,7 @@ function DeliveryPaymentHistoryModal({ isOpen, onClose,displayData }) {
             setLoading(true);
             try {
                 const response = await fetch(
-                    `${import.meta.env.VITE_API_URL}/purchasing/payment-history/${displayData.id}`
+                    `${import.meta.env.VITE_API_URL}/api/purchasing/payment-history/${displayData.id}`
                 );
 
                 if (!response.ok) {

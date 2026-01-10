@@ -220,7 +220,7 @@ function CreateSalesInvoice() {
     };
     const fetchPurchases = async () => {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/purchasing`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`);
         const data = await res.json();
         setOrders(data);
     } catch (err) {
@@ -230,7 +230,7 @@ function CreateSalesInvoice() {
 
     const fetchSuppliers = async () => {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/supplier`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`);
         const data = await res.json();
         setSuppliers(data);
     } catch (err) {
