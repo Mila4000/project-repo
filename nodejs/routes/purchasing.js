@@ -16,5 +16,6 @@ router.get("/delivery-status-history/:id",purchasingController.displayDeliveryHi
 router.post("/update-delivery-status/:id",purchasingController.updateDeliveryStatus);
 router.patch("/payment/:id",purchasingController.updatePaymentHistory);
 router.get("/payment-history/:id", purchasingController.getPaymentHistory);
+router.get("/items", purchasingController.getBrands);
 
 export default router;

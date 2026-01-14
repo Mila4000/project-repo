@@ -38,7 +38,7 @@
             unitPrice: editingItem.unit_price ?? 0,
             shipping: editingItem.shipping ?? 0,
             discount: editingItem.discount ?? 0,
-            total: editingItem.line_total + editingItem.shipping - editingItem.discount?? 0,
+            total: editingItem.line_total + editingItem.shipping - editingItem.discount,
             });
         }
         }, [editingItem]);

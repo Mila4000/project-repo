@@ -70,6 +70,7 @@ export const createPurchase = async (payload) => {
     return {
       product_name: item.name,
       quantity: item.quantity,
+      expected_quantity: item.quantity,
       unit_price: item.unitPrice,
       line_total: lineTotal,
       type: item.type,
@@ -154,7 +155,6 @@ export const createPurchase = async (payload) => {
    */
   const itemsToInsert = preparedItems.map(item => ({
     purchased_order_id: purchase.id,
-    expected_quantity: 0,
     warehouse,
     item_code: "0-000-000",
     ...item
@@ -311,11 +311,11 @@ const { data, error } = await supabase
   if (error) throw error;
   return data;
 }
-export const updateDeliveryStatus = async (id, status, remark) => {
+export const updateDeliveryStatus = async (id, delivery_status, remark) => {
   // 1️⃣ Update current delivery status
   const { error: updateError } = await supabase
     .from("purchased_order")
-    .update({ delivery_status: status })
+    .update({ delivery_status: delivery_status })
     .eq("id", id);
 
   if (updateError) {
@@ -328,7 +328,7 @@ export const updateDeliveryStatus = async (id, status, remark) => {
     .insert([
       {
         purchased_order_id: id,
-        status,
+        delivery_status,
         remarks: remark,
       },
     ])
@@ -407,3 +407,12 @@ export const getPaymentHistory = async (id) => {
   if (error) throw error;
   return data;
 };
+
+export const getBrands = async ()=>{
+  const { data, error } = await supabase
+    .from("items")
+    .select(`*`)
+    .order("id", { ascending: false });
+  if (error) throw error;
+  return data; 
+}

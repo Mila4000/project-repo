@@ -135,8 +135,8 @@ export const getReceivedItemsStats = async () => {
       `,
       { count: "exact", head: true }
     )
-    .eq("purchased_order.approval_status", "Approved");
-
+    .eq("purchased_order.approval_status", "Approved")
+    .neq("purchased_order.delivery_status", "Out for Delivery");
   if (error) throw error;
 
   return {

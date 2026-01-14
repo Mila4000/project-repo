@@ -63,6 +63,39 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                 <tbody>
                   {orders.length > 0 ? (
                   orders.map((order, index) => {
+                    const getDeliveryStatusDisplay = (order) => {
+                    // If rejected or already delivered → normal label
+                    if (
+                      order.approval_status === "Rejected" ||
+                      order.delivery_status === "Delivered" ||
+                      !order.delivery_date
+                    ) {
+                      return {
+                        label: order.delivery_status,
+                        className: getDeliveryStatusColor(order.delivery_status),
+                      };
+                    }
+
+                    const today = new Date();
+                    const deliveryDate = new Date(order.delivery_date);
+
+                    // Not overdue yet
+                    if (today <= deliveryDate) {
+                      return {
+                        label: order.delivery_status,
+                        className: getDeliveryStatusColor(order.delivery_status),
+                      };
+                    }
+
+                    const diffTime = today - deliveryDate;
+                    const overdueDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+                    return {
+                      label: `Overdue (${overdueDays} day${overdueDays > 1 ? "s" : ""})`,
+                      className:
+                        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                    };
+                  };
                     return (
                       <tr key={order.po} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4" key={index}>
@@ -91,9 +124,16 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(order.delivery_status)}`}>
-                            {order.delivery_status}
-                          </span>
+                          {(() => {
+                            const status = getDeliveryStatusDisplay(order);
+                            return (
+                              <span
+                                className={`font-medium text-xs px-3 py-1 rounded-full ${status.className}`}
+                              >
+                                {status.label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="p-4">
                           <span className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(order.payment_status)}`}>

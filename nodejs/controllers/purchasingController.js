@@ -124,15 +124,15 @@ export const displayDeliveryHistory = async (req, res) => {
 export const updateDeliveryStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, remarks } = req.body;
+    const { delivery_status, remarks } = req.body;
 
-    if (!status) {
+    if (!delivery_status) {
       return res.status(400).json({ message: "Delivery status is required" });
     }
 
     const updated = await purchasingService.updateDeliveryStatus(
       id,
-      status,
+      delivery_status,
       remarks
     );
 
@@ -165,6 +165,15 @@ export const getPaymentHistory = async (req, res) => {
   try {
     const id = req.params.id;
     const data = await purchasingService.getPaymentHistory(id);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to fetch purchases" });
+  }
+};
+export const getBrands = async (req, res) => {
+  try {
+    const data = await purchasingService.getBrands();
     res.json(data);
   } catch (err) {
     console.error(err);

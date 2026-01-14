@@ -20,7 +20,7 @@ const warehouseData = [
 /*                             MAIN COMPONENT                                 */
 /* -------------------------------------------------------------------------- */
 
-function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
+function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
   /* ----------------------------- STATE ----------------------------------- */
 
   const [suppliers, setSuppliers] = useState([]);
@@ -33,12 +33,16 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [purchaseItems, setPurchaseItems] = useState([]);
+  const getToday = () => {
+    return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  };
 
 
   const [formValues, setFormValues] = useState({
     PONumber: "",
     supplier: null,
-    transaction_date: "",
+    transaction_date: getToday(),
+    delivery_date: getToday(),
     warehouse: null,
     remarks: "",
   });
@@ -55,7 +59,8 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     setFormValues({
       PONumber: "",
       supplier: null,
-      transaction_date: "",
+      transaction_date: getToday(),
+      delivery_date: getToday(),
       warehouse: null,
       remarks: "",
     });
@@ -97,7 +102,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
     return;
   }
 
-  if (!formValues.supplier || !formValues.transaction_date) {
+  if (!formValues.supplier || !formValues.transaction_date || !formValues.delivery_date) {
     alert("Please complete all required fields.");
     return;
   }
@@ -108,7 +113,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
       supplier: formValues.supplier,
       warehouse: formValues.warehouse,
       transaction_date: new Date(formValues.transaction_date).toISOString(),
-      delivery_date: new Date().toISOString(),
+      delivery_date: new Date(formValues.delivery_date).toISOString(),
       items: purchaseItems.map(item => ({
         name: item.brand,
         type: item.type,
@@ -252,6 +257,18 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                                 id="transaction_date"
                                 name="transaction_date"
                                 value={formValues.transaction_date}
+                                onChange={(e) => handleInputChange(e.target.value, e.target.name)} 
+                                className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white" /> 
+                            </div>
+                            <div> 
+                                <label htmlFor="delivery_date" 
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
+                                Delivery Date 
+                                </label> 
+                                <input type="date" 
+                                id="delivery_date"
+                                name="delivery_date"
+                                value={formValues.delivery_date}
                                 onChange={(e) => handleInputChange(e.target.value, e.target.name)} 
                                 className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white" /> 
                             </div>
@@ -433,6 +450,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase }) {
                 isOpen={isItemModalOpen} 
                 onClose={handleCloseItemModal} 
                 onAddItem={handleAddItem} 
+                loadItemList={itemList}
             />
         </>
     );

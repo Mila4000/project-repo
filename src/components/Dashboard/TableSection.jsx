@@ -67,7 +67,6 @@ const topProducts = [
   },
 ];
 function TableSection({ordertable}) {
-    console.log("Order table",ordertable)
 
     
     const getApprovalStatusColor = (status) => {

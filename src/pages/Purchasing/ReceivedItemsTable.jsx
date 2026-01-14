@@ -33,7 +33,9 @@ function ReceivedItemsTable({ orders, onEdit, onDelete }) {
                 </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order) => {
+                   {orders
+                  .filter(order => order.delivery_status !== "Out for Delivery")
+                  .map((order) => {
                     return (
                       <tr key={order.id} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4">

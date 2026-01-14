@@ -28,7 +28,6 @@ export const getAllStockItems = async () => {
     return data;
 }
 export const createStockItem = async (stock) => {
-    console.log(stock);
     const {data, error} = await supabase
         .from("items")
         .insert([{

@@ -30,7 +30,6 @@ function StatsGrid() {
       .catch(err => console.error("Failed to fetch stats", err));
   }, []);
 
-  console.log("stats data",statsData)
   const stats = [
     {
       title: "Total Revenue",

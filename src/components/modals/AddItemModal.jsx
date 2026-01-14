@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect ,useMemo} from 'react';
 import { Plus, X } from 'lucide-react'; 
 import CustomFormSelect from '../filter/CustomFormSelect'; 
 
@@ -10,7 +10,7 @@ const TYPE_OPTIONS = [
     { value: 'Other Items/Services', label: 'Other Items/Services' }
 ];
 
-function AddItemModal({ isOpen, onClose, onAddItem }) {
+function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
     /* =======================
     ITEM FORM STATE
     ======================= */
@@ -24,7 +24,14 @@ function AddItemModal({ isOpen, onClose, onAddItem }) {
     discount: 0,
     total: 0,
     });
-
+     const BRAND_OPTIONS = [
+    ...new Map(
+        loadItemList?.map(item => [item.item_name, {
+        value: item.item_name,
+        label: item.item_name,
+        }])
+    ).values()
+    ];
     /* =======================
     AUTO TOTAL CALCULATION
     ======================= */
@@ -96,22 +103,39 @@ function AddItemModal({ isOpen, onClose, onAddItem }) {
             total: Number(itemForm.total) || 0,
         };
 
-        if (!finalItem.brand || !finalItem.type || finalItem.quantity <= 0) {
-            alert("Please enter a brand, select a type, and enter a valid quantity.");
+       if (!finalItem.brand) {
+            alert("Please select a brand.");
             return;
         }
+
+        if (!finalItem.type) {
+            alert("Please select a type.");
+            return;
+        }
+
+        if (finalItem.quantity <= 0) {
+            alert("Quantity must be greater than 0.");
+            return;
+        }
+
+        if (finalItem.unitPrice <= 0) {
+            alert("Unit price must be greater than 0.");
+            return;
+        }
+
 
         onAddItem(finalItem);
 
         setItemForm({
             brand: "",
-            type: "",
-            quantity: 0,
-            unitPrice: 0,
-            shipping: 0,
-            discount: 0,
-            total: 0,
+        type: "",
+        quantity: 0,
+        unitPrice: 0,
+        shipping: 0,
+        discount: 0,
+        total: 0,
         });
+
     };
 
     return (
@@ -127,14 +151,15 @@ function AddItemModal({ isOpen, onClose, onAddItem }) {
                 <form onSubmit={handleSave} className="space-y-4">
                     {/* Brand Input */}
                     <div>
-                        <label htmlFor="brand" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Brand</label>
-                        <input 
-                            type="text" id="brand" name="brand"
-                            value={itemForm.brand}
-                            onChange={handleItemChange}
-                            className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500"
-                            required
+                        <CustomFormSelect
+                            label="Brand"
+                            name="brand"
+                            options={BRAND_OPTIONS}
+                            initialValue={itemForm.item_name}
+                            onSelect={handleSelectChange}
+                            placeholder="Select brand..."
                         />
+                        
                     </div>
 
                     {/* Type Dropdown Select */}

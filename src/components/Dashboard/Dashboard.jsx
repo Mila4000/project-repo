@@ -6,7 +6,6 @@ import ActivityFeed from './ActivityFeed';
 
 
 function Dashboard() {
-    console.log("Dashboard render");
 
   useEffect(() => {
       fetchOrderTable();
