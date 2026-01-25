@@ -52,6 +52,7 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">PO No.</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Supplier</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Transaction Date</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Date</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total(in ₱)</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Approval Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Status</th>
@@ -86,26 +87,26 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                         className: getDeliveryStatusColor(order.delivery_status),
                       };
                     }
-                    const diffTime = today - deliveryDate;
-                    
-                    const totalHours = Math.floor(diffTime / (1000 * 60 * 60));
-                    const overdueDays = Math.floor(totalHours / 24);
+                  const diffTime = today - deliveryDate;
 
-                    let label;
+                  const totalHours = Math.floor(diffTime / (1000 * 60 * 60));
+                  const overdueDays = Math.floor(totalHours / 24);
 
-                    if (totalHours < 1) {
-                      label = "Overdue (< 1 hour)";
-                    } else if (totalHours < 24) {
-                      label = `Overdue (${totalHours} hour${totalHours > 1 ? "s" : ""})`;
-                    } else {
-                      label = `Overdue (${overdueDays} day${overdueDays > 1 ? "s" : ""})`;
-                    }
+                  let label;
 
-                    return {
-                      label,
-                      className:
-                        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
-                    };
+                  if (totalHours < 1) {
+                    label = "Overdue (< 1 hour)";
+                  } else if (totalHours < 24) {
+                    label = `Overdue (${totalHours} hour${totalHours > 1 ? "s" : ""})`;
+                  } else {
+                    label = `Overdue (${overdueDays} day${overdueDays > 1 ? "s" : ""})`;
+                  }
+
+                  return {
+                    label,
+                    className:
+                      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                  };
                   };
                     return (
                       <tr key={order.po} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
@@ -122,6 +123,11 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
                             {order.transaction_date}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          <span className="text-sm text-slate-800 dark:text-white">
+                            {order.delivery_date}
                           </span>
                         </td>
                         <td className="p-4">

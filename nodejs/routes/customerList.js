@@ -1,4 +1,3 @@
-// routes/purchasing.js
 import express from "express";
 import * as customerListController from "../controllers/customerListController.js";
 

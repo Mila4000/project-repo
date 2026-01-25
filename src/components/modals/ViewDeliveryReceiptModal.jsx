@@ -4,12 +4,17 @@ import { X } from 'lucide-react';
 import DeliveryPaymentHistoryModal from './DeliveryPaymentHistoryModal';
 import PayDeliveryNowModal from './PayDeliveryNowModal';
 
-import { getReceiptPublicUrl } from "../../utils/storageHelpers";
+import { getReceiptPublicUrl,getProofUrl } from "../../utils/storageHelpers";
 
-function ViewReceiptModal({isOpen, displayData, onClose}) {
+function ViewDeliveryReceiptModal({isOpen, displayData, onClose, transactType}) {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [isPayOpen, setIsPayOpen] = useState(false);
-    const receiptPublicUrl = getReceiptPublicUrl(displayData?.receipt_url);
+    const receiptPublicUrl =
+        transactType === "purchasing"
+            ? getReceiptPublicUrl(displayData?.receipt_url)
+            : transactType === "sales-invoice"
+            ? getProofUrl(displayData?.payment_image_url)
+            : null;
 
     const handleClosePayDeliveryModal = () =>{
         setIsPayOpen(false);
@@ -69,6 +74,7 @@ function ViewReceiptModal({isOpen, displayData, onClose}) {
             isOpen={isHistoryOpen} 
             onClose={() => setIsHistoryOpen(false)} 
             displayData={displayData}
+            transactType={transactType}
         />
         
         <PayDeliveryNowModal 
@@ -76,10 +82,11 @@ function ViewReceiptModal({isOpen, displayData, onClose}) {
             onClose={handleClosePayDeliveryModal
             } 
             displayData={displayData}
+            transactType={transactType}
         />
     </div>
 
   )
 };
 
-export default ViewReceiptModal;
+export default ViewDeliveryReceiptModal;

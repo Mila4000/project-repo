@@ -58,6 +58,23 @@ export const getDashboardStats = async () => {
     .gte("transaction_date", startOfPrevMonth)
     .lt("transaction_date", startOfCurrentMonth);
 
+  /* ---------------- REVENUE ---------------- */
+  const { data: currentRevenue, error: currentRevenueError } =
+    await supabase.from("sales_invoice")
+    .select("total")
+    .gte("transaction_date", startOfCurrentMonth);
+  if (currentRevenueError) throw currentRevenueError;
+  const { data: prevRevenue, error: prevRevenueError } =
+    await supabase.from("sales_invoice")
+    .select("total")
+    .gte("transaction_date", startOfPrevMonth)
+    .lt("transaction_date", startOfCurrentMonth);
+  if (prevRevenueError) throw prevRevenueError;
+
+  const sumRevenue = (rows = []) =>
+  rows.reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const currentRevenueTotal = sumRevenue(currentRevenue);
+  const prevRevenueTotal = sumRevenue(prevRevenue);
   /* ---------------- HELPERS ---------------- */
 
   const calcChange = (current, previous) => {
@@ -86,7 +103,7 @@ export const getDashboardStats = async () => {
   );
 
   const ordersStats = calcChange(currentOrders, prevOrders);
-
+  const revenueStats = calcChange(currentRevenueTotal, prevRevenueTotal);
   return {
     activeCustomers: {
       value: currentActiveCustomers,
@@ -96,5 +113,35 @@ export const getDashboardStats = async () => {
       value: currentOrders,
       ...ordersStats,
     },
+    revenue: {
+      value: currentRevenueTotal,
+      ...revenueStats,
+    },
   };
+};
+
+export const getSalesTable = async () => {
+const { data, error } = await supabase
+    .from("sales_invoice_item")
+    .select(`
+      *
+    `)
+    .order("id", { ascending: false });
+
+  if (error) throw error;
+
+  return data;
+}
+export const getMonthlySalesExpenses = async () => {
+  const { data, error } = await supabase
+    .from("monthly_sales_expenses")
+    .select(`
+      month,
+      sales,
+      expenses
+    `);
+
+  if (error) throw error;
+
+  return data;
 };

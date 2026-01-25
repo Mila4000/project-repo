@@ -6,6 +6,7 @@ function DeliveryStatusModal({
     onClose,
     purchaseOrderId,
     currentStatus,
+    transactType,
 }) {
     const [delivery_status, setStatus] = useState(currentStatus || "Order Placed");
     const [remarks, setRemarks] = useState("");
@@ -21,7 +22,7 @@ function DeliveryStatusModal({
             setLoadingHistory(true);
             try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/purchasing/delivery-status-history/${purchaseOrderId}`
+                `${import.meta.env.VITE_API_URL}/api/${transactType}/delivery-status-history/${purchaseOrderId}`
             );
 
             const data = await response.json();
@@ -40,10 +41,10 @@ function DeliveryStatusModal({
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsSubmitting(true);
-
+        
         try {
             const response = await fetch(
-                `${import.meta.env.VITE_API_URL}/api/purchasing/update-delivery-status/${purchaseOrderId}`,
+                `${import.meta.env.VITE_API_URL}/api/${transactType}/update-delivery-status/${purchaseOrderId}`,
                 {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },

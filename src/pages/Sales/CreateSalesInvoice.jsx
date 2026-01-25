@@ -8,7 +8,9 @@ import TablePagination from '../../components/pagination/TablePagination';
 
 import CreateInvoiceModal from '../../components/modals/CreateInvoiceModal';
 import EditSalesInvoiceModal from '../../components/modals/EditSalesInvoiceModal';
-import ViewReceiptModal from '../../components/modals/ViewReceiptModal';
+import ViewDeliveryReceiptModal from '../../components/modals/ViewDeliveryReceiptModal';
+import ViewSalesInvoiceModal from '../../components/modals/ViewSalesInvoiceModal';
+import { View } from 'lucide-react';
 
 const ALL_OPTION = 'All';
 
@@ -198,47 +200,89 @@ function CreateSalesInvoice() {
     const iconProps = {
       className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
     };
-    
+    const [stats, setStats] = useState(null);
     const [orders, setOrders] = useState([]);
-    const [suppliers, setSuppliers] = useState([]);
-    // --- ADD MODAL STATE ---
+    const [customers, setCustomers] = useState([]);
+
+    const [dataView, setDataView] = useState([]);
+
+
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [itemList,setItemList] = useState([]);
     const openModal = () => setIsModalOpen(true);
     const closeModal = () => setIsModalOpen(false);
 
-    // --- EDIT MODAL STATE ---
+
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [orderToEdit, setOrderToEdit] = useState(null);
 
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-    const openViewModal = () => setIsViewModalOpen(true);
-    const closeViewModal = () => setIsViewModalOpen(false);
 
     const extractUniqueOptions = (key, placeholder) => {
       const uniqueValues = [...new Set(orders.map(order => order[key]))];
       return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
     };
-    const fetchPurchases = async () => {
+    const fetchStats = async () => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice/stats`);
+            const data = await res.json();
+            setStats(data);
+        } catch (err) {
+            console.error("Failed to fetch sales stats", err);
+        }
+    };
+    const fetchInvoice = async () => {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice`);
         const data = await res.json();
-        setOrders(data);
+        const salesWithTotals = data.map(order => ({
+        ...order,
+        total_quantity: order.sales_invoice_item?.reduce(
+            (sum, item) => sum + Number(item.quantity || 0),
+            0
+        )
+        }));
+
+        setOrders(salesWithTotals);
     } catch (err) {
-        console.error("Failed to fetch purchased orders", err);
+        console.error("Failed to fetch invoice", err);
     }
     };
 
-    const fetchSuppliers = async () => {
+    const fetchCustomers = async () => {
     try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`);
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers`);
         const data = await res.json();
-        setSuppliers(data);
+        setCustomers(data);
     } catch (err) {
-        console.error("Failed to fetch suppliers", err);
+        console.error("Failed to fetch customers", err);
     }
     };
-
-
+    const fetchBrands = async () =>{
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing/items`);
+            const data = await res.json();
+            setItemList(data);
+        } catch (err) {
+            console.error("Failed to fetch item list", err);
+        }
+    };
+    const handleView = (order) => {
+    setDataView(order);
+    setIsEditModalOpen(true);
+    };
+    const openViewModal = (order) => {
+        setDataView(order);
+        setIsViewModalOpen(true);
+    };
+     const closeViewModal = () => {
+        setDataView(null);
+        setIsViewModalOpen(false);
+    };
+    const handleCloseViewModal = () => {
+    setIsEditModalOpen(false);
+    setDataView(null);
+    };
     const rowLimitOptions = [5, 10, 15]; 
     
     const dateRangeOptions = ['Date Range', ALL_OPTION, 'Today', 'Last 7 Days', 'Last 30 Days'];
@@ -311,7 +355,30 @@ function CreateSalesInvoice() {
     const handleSaveEdit = (updatedOrder) => {
       handleCloseEditModal();
     };
+    const handleAddSales = (newSales) => {
+    setOrders((prev) => [...prev, newSales]);
+    fetchInvoice();
+    fetchCustomers();
+    fetchBrands();
+    fetchStats();
+    };
 
+    const handleDeleteSalesInvoice = async (si) => {
+      if (!confirm("Delete this sale invoice?")) return;
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice/${si}`, {
+          method: 'DELETE',
+        });
+        if (!response.ok) throw new Error("Delete failed");
+
+        fetchStats();
+        fetchInvoice();
+        fetchCustomers();
+        fetchBrands();
+      } catch (error) {
+        console.error('Failed to delete sales invoice:', error);
+      }
+    };
     // --- FILTERING LOGIC ---
     const filteredOrders = useMemo(() => {
       let filtered = orders;
@@ -375,13 +442,17 @@ function CreateSalesInvoice() {
     }, [filteredOrders, rowLimit, currentPage]);
 
     useEffect(() => {
-      fetchPurchases();
-      fetchSuppliers();
-    }, []);
+      if (!isEditModalOpen && !isViewModalOpen && !isModalOpen) {
+      fetchInvoice();
+      fetchCustomers();
+      fetchBrands();
+      fetchStats();
+      }
+    }, [isEditModalOpen, isViewModalOpen, isModalOpen]);
 
   return (
     <div>
-      <SalesInvoiceStatsGrid />
+      <SalesInvoiceStatsGrid stats={stats} />
       <div className = "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl py-4 px-5 border border-slate-200/50 dark:border-slate-700/50">
         
         <SalesInvoiceTableHeader
@@ -410,8 +481,10 @@ function CreateSalesInvoice() {
         <SalesInvoiceTable 
           orders={paginatedOrders}
           onEdit={handleEdit}
+          onDelete={handleDeleteSalesInvoice}
+          onView={handleView}
           onViewReceipt={openViewModal}
-          suppliers={suppliers}
+          customers={customers}
         />
 
         <div className = "flex items-center justify-between mb-3">
@@ -433,19 +506,27 @@ function CreateSalesInvoice() {
       <CreateInvoiceModal
           isOpen={isModalOpen} 
           onClose={closeModal} 
+          onAddSales={handleAddSales}
+          itemList={itemList}
       />
-
-
+      <ViewSalesInvoiceModal
+          isOpen={isEditModalOpen} 
+          onClose={handleCloseViewModal}
+          displayData={dataView}
+      />
+      {/* 
       <EditSalesInvoiceModal
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}
           orderData={orderToEdit} 
           onSave={handleSaveEdit}
       />
-      
-      <ViewReceiptModal
+       */}
+      <ViewDeliveryReceiptModal
           isOpen={isViewModalOpen}
           onClose={closeViewModal}
+          displayData={dataView}
+          transactType="sales-invoice"
       />
     </div>
   )

@@ -6,7 +6,7 @@ import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
 import AddItemModal from "./AddItemModal";
 import EditItemModal from "./EditItemModal";
 import DeliveryStatusModal from './DeliveryStatusModal';
-import { getReceiptPublicUrl } from "../../utils/storageHelpers";
+import { getProofUrl,getComputationImageUrl } from "../../utils/storageHelpers";
 import html2pdf from "html2pdf.js";
 
 
@@ -24,7 +24,7 @@ const warehouseData = [
 /*                             MAIN COMPONENT                                 */
 /* -------------------------------------------------------------------------- */
 
-function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
+function ViewSalesInvoiceModal({ isOpen, onClose, displayData }) {
   /* ----------------------------- STATE ----------------------------------- */
     const [isPayOpen, setIsPayOpen] = useState(false);
     const [isEditingItems, setIsEditingItems] = useState(false);
@@ -36,17 +36,26 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     // Local editable copy
     const [purchaseItems, setPurchaseItems] = useState([]);
 
+    const [receiptFileName, setReceiptFileName] = useState("No file chosen");
+
+    const [formValues, setFormValues] = useState([]);
 
     /* ----------------------------- HANDLERS -------------------------------- */
     useEffect(() => {
-    if (displayData?.purchased_order_item) {
-        setPurchaseItems(displayData.purchased_order_item);
+    if (displayData?.sales_invoice_item) {
+        setPurchaseItems(displayData.sales_invoice_item);
     }
     }, [displayData]);
+    const handleInputChange = (value, name) => {
+        setFormValues((prev) => ({
+        ...prev,
+        [name]: value,
+        }));
+    };
     const handleReject = async(id) => {
        try {
         const response = await fetch(
-            `http://localhost:5000/api/purchasing/reject/${id}`,
+            `${import.meta.env.VITE_API_URL}/api/sales-invoice/reject/${id}`,
             {
             method: "PATCH",
             headers: {
@@ -65,7 +74,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     const handleApprove = async(id) => {
          try {
         const response = await fetch(
-            `${import.meta.env.VITE_API_URL}/api/purchasing/approve/${id}`,
+            `${import.meta.env.VITE_API_URL}/api/sales-invoice/approve/${id}`,
             {
             method: "PATCH",
             headers: {
@@ -151,7 +160,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
             },
             body: JSON.stringify({
                 items: purchaseItems,
-                transaction: "purchasing",
+                transaction: "sales",
             }),
             });
 
@@ -196,9 +205,9 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
 
     handleCloseModals();
     };
-
     /* ----------------------------- EFFECTS --------------------------------- */
-    const receiptPublicUrl = getReceiptPublicUrl(displayData?.receipt_url);
+    const ProofPublicUrl = getProofUrl(displayData?.payment_image_url);
+    const ComputationImageURL = getComputationImageUrl(displayData?.computation_img_url);
     /* ----------------------------- GUARD ----------------------------------- */
     if (!isOpen) return null;
     /* ----------------------------- JSX ------------------------------------- */
@@ -211,7 +220,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
             {/* HEADER */}
             <div className="mb-6 flex items-center justify-between border-b border-slate-300 pb-6 dark:border-slate-700">
             <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
-                Purchase Order Details-[{displayData.approval_status}]
+                Sales Order Details-[{displayData.approval_status}]
             </h2>
 
             <button
@@ -228,11 +237,11 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
             {/* PO NUMBER */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                PO No.
+                Sales Invoice No.
                 </label>
                 <input
                 type="text"
-                value={displayData.po}
+                value={displayData.si}
                 disabled
                 className="mt-1 h-9 w-full cursor-not-allowed rounded-md
                             border border-transparent bg-slate-100 px-3 py-1.5
@@ -243,11 +252,11 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
             {/* SUPPLIER */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Supplier
+                Customer
                 </label>
                 <input
                 type="text"
-                value={displayData.supplier.businessname}
+                value={displayData.customer.name}
                 disabled
                 className="mt-1 h-9 w-full cursor-not-allowed rounded-md
                             border border-transparent bg-slate-100 px-3 py-1.5
@@ -270,14 +279,28 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
                 />
             </div>
 
-            {/* WAREHOUSE */}
+            {/* CONTACT NUMBER */}
             <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Warehouse
+                Contact Number
                 </label>
                 <input
                 type="text"
-                value={displayData.purchased_order_item[0]?.warehouse}
+                value={displayData.customer.contactno}
+                disabled
+                className="mt-1 h-9 w-full cursor-not-allowed rounded-md
+                            border border-transparent bg-slate-100 px-3 py-1.5
+                            text-slate-600 dark:bg-slate-800 dark:text-slate-400"
+                />
+            </div>
+            {/* ADDRESS */}
+            <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Address
+                </label>
+                <input
+                type="text"
+                value={displayData.customer.address}
                 disabled
                 className="mt-1 h-9 w-full cursor-not-allowed rounded-md
                             border border-transparent bg-slate-100 px-3 py-1.5
@@ -394,34 +417,14 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
 
             {/* LEFT COLUMN */}
             <div className="space-y-4">
-
-                {/* REMARKS FIELD (VIEW ONLY) */}
-                <label
-                htmlFor="remarks"
-                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
-                >
-                Remarks
-                </label>
-                <textarea
-                id="remarks"
-                rows="3"
-                value={displayData.remarks}
-                disabled
-                className="mt-1 p-2 block w-full rounded-md
-                    border border-transparent
-                    bg-slate-100 dark:bg-slate-800
-                    text-slate-600 dark:text-slate-400
-                    resize-none cursor-not-allowed"
-                />
-
-                {/* FILE (VIEW ONLY) */}
+                 {/* FILE (VIEW ONLY) */}
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Delivery Receipt
+                Computation
                 </label>
 
-                {receiptPublicUrl ? (
+                {ComputationImageURL ? (
                 <a
-                    href={receiptPublicUrl}
+                    href={ComputationImageURL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center rounded-lg
@@ -431,7 +434,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
                     text-blue-600 dark:text-blue-400
                     hover:underline"
                 >
-                    📎 {displayData.receipt_url.split("/").pop()}
+                    📎 {displayData.computation_img_url.split("/").pop()}
                 </a>
                 ) : (
                 <div className="w-full max-w-xs rounded-lg px-4 py-2
@@ -441,6 +444,36 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
                     No file uploaded
                 </div>
                 )}
+                
+                {/* FILE (VIEW ONLY) */}
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Delivery Receipt
+                </label>
+
+                {ProofPublicUrl ? (
+                <a
+                    href={ProofPublicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center rounded-lg
+                    w-full max-w-xs px-4 py-2
+                    bg-slate-100 dark:bg-slate-800
+                    border border-slate-300 dark:border-slate-600
+                    text-blue-600 dark:text-blue-400
+                    hover:underline"
+                >
+                    📎 {displayData.payment_image_url.split("/").pop()}
+                </a>
+                ) : (
+                <div className="w-full max-w-xs rounded-lg px-4 py-2
+                    bg-slate-100 dark:bg-slate-800
+                    border border-slate-300 dark:border-slate-600
+                    text-sm italic text-slate-500 dark:text-slate-400">
+                    No file uploaded
+                </div>
+                )}
+
+                
             </div>
 
             {/* RIGHT COLUMN – PAYMENT DETAILS */}
@@ -455,21 +488,21 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
                     <tr className="bg-slate-200/50 dark:bg-slate-700/50">
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Merchandise Subtotal</td>
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
-                        {Number(merchandiseSubtotal).toFixed(2)}
+                        {Number(paymentTotals.merchandiseSubtotal).toFixed(2)}
                         </td>
                     </tr>
 
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Shipping Subtotal</td>
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
-                        {Number(shippingSubtotal).toFixed(2)}
+                        {Number(paymentTotals.shippingSubtotal).toFixed(2)}
                         </td>
                     </tr>
 
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Item Discount Subtotal</td>
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
-                        {Number(discountSubtotal).toFixed(2)}
+                        {Number(paymentTotals.discountSubtotal).toFixed(2)}
                         </td>
                     </tr>
 
@@ -481,7 +514,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
                     <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 font-medium dark:font-bold">Total Payment</td>
                         <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 font-medium dark:font-bold text-end">
-                        {Number(totalPayment).toFixed(2)}
+                        {Number(paymentTotals.totalPayment).toFixed(2)}
                         </td>
                     </tr>
                     </tbody>
@@ -550,7 +583,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
             onClose={() => setIsPayOpen(false)} 
             purchaseOrderId={displayData.id}
             currentStatus={displayData.delivery_status}
-            transactType="purchasing"
+            transactType="sales-invoice"
         />
 
     </>
@@ -558,4 +591,4 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
 
 }
 
-export default ViewPurchaseOrderModal;
+export default ViewSalesInvoiceModal;

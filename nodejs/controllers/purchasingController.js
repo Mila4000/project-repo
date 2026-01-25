@@ -65,24 +65,7 @@ export const getPurchaseStats = async (req, res) => {
   }
 };
 
-export const updatePurchaseReceipt = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { receipt_url } = req.body;
 
-    if (!receipt_url) {
-      return res.status(400).json({ message: "receipt_url is required" });
-    }
-
-    const updatedPurchase =
-      await purchasingService.updatePurchaseReceipt(id, receipt_url);
-
-    res.json(updatedPurchase);
-  } catch (err) {
-    console.error("Update receipt error:", err);
-    res.status(500).json({ message: err.message || "Failed to update receipt" });
-  }
-};
 export const rejectPurchase = async (req, res) => {
   try {
     const { id } = req.params;

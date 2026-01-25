@@ -137,6 +137,7 @@ export const getReceivedItemsStats = async () => {
     )
     .eq("purchased_order.approval_status", "Approved")
     .neq("purchased_order.delivery_status", "Out for Delivery");
+
   if (error) throw error;
 
   return {
@@ -144,7 +145,8 @@ export const getReceivedItemsStats = async () => {
   };
 };
 
-export const bulkSave = async (items) => {
+export const bulkSave = async (items, transaction) => {
+  if (transaction === "purchasing") {
   const toInsert = [];
   const toUpdate = [];
 
@@ -239,4 +241,85 @@ export const bulkSave = async (items) => {
     .eq("id", purchasedOrderId);
 
   if (updateError) throw updateError;
+  } else if (transaction === "sales") {
+    // Similar logic for sales transaction
+    const toInsert = [];
+    const toUpdate = [];
+
+    salesInvoiceId = null;
+    for (const item of items) {
+      const {
+        id,
+        product_name,
+        sales_invoice_id,
+        type,
+        quantity,
+        unit_price,
+        line_total
+      } = item;
+      salesInvoiceId = sales_invoice_id;
+
+      const data = {
+        product_name,
+        sales_invoice_id,
+        type,
+        quantity,
+        unit_price,
+        line_total
+      };
+      if (id) {
+        toUpdate.push({ id, ...data });
+      } else {
+        toInsert.push(data);
+      }
+    }
+    /* ---------- INSERT ---------- */
+    if (toInsert.length) {
+      const { error } = await supabase
+        .from("sales_invoice_item")
+        .insert(toInsert);
+      if (error) throw error;
+    }
+    /* ---------- UPDATE ---------- */
+    for (const item of toUpdate) {
+      const { id, ...data } = item;
+      const { error } = await supabase
+        .from("sales_invoice_item")
+        .update(data)
+        .eq("id", id);
+      if (error) throw error;
+    }
+    /* ---------- RECALCULATE MERCHANDISE SUBTOTAL ---------- */
+    const { data: rows, error: sumError } = await supabase
+      .from("sales_invoice_item")
+      .select("line_total")
+      .eq("sales_invoice_id", salesInvoiceId);
+    if (sumError) throw sumError;
+    const merchandiseSubtotal = rows.reduce(
+      (sum, row) => sum + Number(row.line_total || 0),
+      0
+    );
+    /* ---------- GET SHIPPING & DISCOUNT ---------- */
+    const { data: invoice, error: invoiceError } = await supabase
+      .from("sales_invoice")
+      .select("shipping_subtotal, discount_subtotal")
+      .eq("id", salesInvoiceId)
+      .single();
+    if (invoiceError) throw invoiceError;
+    const shippingSubtotal = Number(invoice.shipping_subtotal || 0);
+    const discountSubtotal = Number(invoice.discount_subtotal || 0);
+    /* ---------- CALCULATE TOTAL ---------- */
+    const total =
+      merchandiseSubtotal + shippingSubtotal - discountSubtotal;
+    /* ---------- UPDATE SALES INVOICE ---------- */
+    const { error: updateError } = await supabase
+      .from("sales_invoice")
+      .update({
+        merchandise_subtotal: merchandiseSubtotal,
+        total: total
+      })
+      .eq("id", salesInvoiceId);
+    if (updateError) throw updateError;
+  }
+    
 };

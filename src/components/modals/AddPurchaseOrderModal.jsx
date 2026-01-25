@@ -5,6 +5,7 @@ import CustomFormSelect from "../filter/CustomFormSelect";
 import AddItemModal from "./AddItemModal";
 import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
 import { uploadReceipt } from "../../utils/storageHelpers";
+import { fetchPoPreview  } from "../../utils/previewOrder";
 
 /* -------------------------------------------------------------------------- */
 /*                                   DATA                                     */
@@ -27,6 +28,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
   const [loadingSuppliers, setLoadingSuppliers] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [discount, setDiscount] = useState(0);
+  const [poPreview, setPoPreview] = useState("");
 
   const [receiptFile, setReceiptFile] = useState(null);
   const [receiptFileName, setReceiptFileName] = useState("No file chosen");
@@ -213,6 +215,16 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
     fetchSuppliers();
   }, [isOpen]);
+    useEffect(() => {
+    if (!isOpen) return;
+
+    const loadPreview = async () => {
+      const preview = await fetchPoPreview(formValues.transaction_date);
+      setPoPreview(preview);
+    };
+
+    loadPreview();
+  }, [isOpen, formValues.transaction_date]);
 
   /* ----------------------------- GUARD ----------------------------------- */
 
@@ -237,7 +249,28 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
                     <form onSubmit={handleFormSubmit} className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            
+                             <div>
+                              <label
+                                htmlFor="PONumber"
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                              >
+                                PO No. (Preview)
+                              </label>
+
+                              <input
+                                type="text"
+                                id="PONumber"
+                                value={poPreview}
+                                disabled
+                                className="
+                                  w-full mt-1 px-3 py-1.5 h-9 rounded-md
+                                  border border-slate-300 dark:border-slate-600
+                                  bg-slate-100 dark:bg-slate-800
+                                  text-slate-500 dark:text-slate-400
+                                  cursor-not-allowed
+                                "
+                              />
+                            </div>
                             {/* SUPPLIER FIELD */}
                             <CustomFormSelect
                             label="Supplier"
@@ -361,7 +394,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
                                 />
 
                                 {/* FILE UPLOAD FIELD */}
-                                <label className="block mb-2.5 text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="file_input">Upload file</label>
+                                <label className="block mb-2.5 text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="file_input">Upload Delivery Receipt</label>
                                 <div className="relative flex rounded-lg overflow-hidden w-full max-w-xs bg-white border border-slate-300 dark:bg-slate-700 dark:border-slate-600 hover:border-blue-400 shadow-xs">
                                     <span className="bg-slate-400/20 dark:bg-slate-600/90 text-slate-600/80 dark:text-slate-400/80 px-3 py-2 text-sm font-medium flex items-center select-none cursor-pointer">
                                         Choose File

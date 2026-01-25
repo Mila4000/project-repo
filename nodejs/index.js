@@ -8,6 +8,7 @@ import customerListRouter from "./routes/customerList.js";
 import stockItemRouter from "./routes/stockItems.js";
 import inventoryCountRouter from "./routes/inventory.js"
 import dashboardRouter from "./routes/dashboard.js";
+import salesInvoiceRouter from "./routes/salesInvoice.js";
 
 
 const app = express();
@@ -34,6 +35,7 @@ app.use("/api/customers", customerListRouter);
 app.use("/api/stock",stockItemRouter);
 app.use("/api/inventory",inventoryCountRouter);
 app.use("/api/dashboard",dashboardRouter);
+app.use("/api/sales-invoice",salesInvoiceRouter);
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });

@@ -1,5 +1,7 @@
 
 import { supabase } from "../config/supabaseClient.js";
+import {getDeliveryHistoryCore, updateDeliveryStatusCore} from "./deliveryStatusService.js";
+import {applyPaymentCore, getPaymentHistoryCore} from "./paymentHistoryService.js";
 
 export const getAllPurchases = async () => {
   const { data, error } = await supabase
@@ -28,7 +30,7 @@ export const getAllPurchases = async () => {
         discount
       )
     `)
-    .order("transaction_date", { ascending: false });
+    .order("updated_at", { ascending: true });
 
   if (error) throw error;
   return data;
@@ -37,18 +39,16 @@ export const getAllPurchases = async () => {
 
 export const createPurchase = async (payload) => {
   const {
-  supplier,
-  transaction_date,
-  delivery_date,
-  approval_status,
-  delivery_status,
-  payment_status,
-  remarks,
-  receipt_url,
-  items = [],
-  warehouse,
-
-    // optional inputs
+    supplier,
+    transaction_date,
+    delivery_date,
+    approval_status,
+    delivery_status,
+    payment_status,
+    remarks,
+    receipt_url,
+    items = [],
+    warehouse,
     shipping_subtotal = 0,
     discount_subtotal = 0
   } = payload;
@@ -57,15 +57,14 @@ export const createPurchase = async (payload) => {
     throw new Error("Purchase must have at least one item");
   }
 
-  // 🔒 AUTHORITATIVE CALCULATIONS
+  /**
+   * STEP 1: AUTHORITATIVE CALCULATIONS
+   */
   let merchandiseSubtotal = 0;
-  let totalQuantity = 0;
 
   const preparedItems = items.map(item => {
     const lineTotal = item.quantity * item.unitPrice;
-
     merchandiseSubtotal += lineTotal;
-    totalQuantity += item.quantity;
 
     return {
       product_name: item.name,
@@ -74,84 +73,44 @@ export const createPurchase = async (payload) => {
       unit_price: item.unitPrice,
       line_total: lineTotal,
       type: item.type,
-      shipping:item.shipping,
-      discount:item.discount
+      shipping: item.shipping,
+      discount: item.discount
     };
   });
 
-  // ensure numbers & sane values
-  const shippingSubtotal = Math.max(0, Number(payload.shipping_subtotal || 0));
-  const discountSubtotal = Math.max(0, Number(payload.discount_subtotal || 0));
+  const shippingSubtotal = Math.max(0, Number(shipping_subtotal));
+  const discountSubtotal = Math.max(0, Number(discount_subtotal));
 
-  // final payable
   const totalPayment = Math.max(
     0,
     merchandiseSubtotal + shippingSubtotal - discountSubtotal
   );
 
-
   /**
-   * STEP 1: INSERT PURCHASE HEADER (PO TEMP PLACEHOLDER)
+   * STEP 2: CREATE PURCHASE HEADER (ATOMIC RPC)
    */
-  const { data: purchase, error: purchaseError } = await supabase
-  .from("purchased_order")
-  .insert({
-    po: null,
-    supplier_id: supplier,
-    transaction_date,
-    delivery_date,
+  const { data: purchase, error: headerError } = await supabase.rpc(
+    "create_purchase_header",
+    {
+      p_supplier_id: supplier,
+      p_transaction_date: transaction_date,
+      p_delivery_date: delivery_date,
+      p_merchandise_subtotal: merchandiseSubtotal,
+      p_shipping_subtotal: shippingSubtotal,
+      p_discount_subtotal: discountSubtotal,
+      p_total: totalPayment,
+      p_approval_status: approval_status,
+      p_delivery_status: delivery_status,
+      p_payment_status: payment_status,
+      p_remarks: remarks,
+      p_receipt_url: null
+    }
+  );
 
-    // ✅ totals
-    merchandise_subtotal: merchandiseSubtotal,
-    shipping_subtotal: shippingSubtotal,
-    discount_subtotal: discountSubtotal,
-    total: totalPayment,
-
-    approval_status,
-    delivery_status,
-    payment_status,
-    remarks,
-    receipt_url
-  })
-  .select()
-  .single();
-
-
-  if (purchaseError) {
-    throw purchaseError;
-  }
+  if (headerError) throw headerError;
 
   /**
-   * STEP 2: GENERATE PO USING DB ID
-   * Format: PO-YYYYMMDD####
-   */
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, "0");
-  const dd = String(today.getDate()).padStart(2, "0");
-
-  const poNumber = `PO-${yyyy}${mm}${dd}${String(purchase.id).padStart(4, "0")}`;
-
-  /**
-   * STEP 3: UPDATE PURCHASE WITH FINAL PO
-   */
-  const { error: poUpdateError } = await supabase
-    .from("purchased_order")
-    .update({ po: poNumber })
-    .eq("id", purchase.id);
-
-  if (poUpdateError) {
-    // rollback header
-    await supabase
-      .from("purchased_order")
-      .delete()
-      .eq("id", purchase.id);
-
-    throw poUpdateError;
-  }
-
-  /**
-   * STEP 4: INSERT LINE ITEMS
+   * STEP 3: INSERT LINE ITEMS
    */
   const itemsToInsert = preparedItems.map(item => ({
     purchased_order_id: purchase.id,
@@ -159,7 +118,6 @@ export const createPurchase = async (payload) => {
     item_code: "0-000-000",
     ...item
   }));
-
   const { error: itemsError } = await supabase
     .from("purchased_order_item")
     .insert(itemsToInsert);
@@ -173,11 +131,12 @@ export const createPurchase = async (payload) => {
     throw itemsError;
   }
 
+  /**
+   * DONE
+   */
   return {
     ...purchase,
-    po: poNumber,
     items: preparedItems,
-
     payment_totals: {
       merchandiseSubtotal,
       shippingSubtotal,
@@ -185,29 +144,6 @@ export const createPurchase = async (payload) => {
       totalPayment
     }
   };
-};
-
-
-
-export const updatePurchase = async (po, updatedData) => {
-  const { data, error } = await supabase
-    .from("purchased_order")
-    .update({
-      supplier_id: updatedData.supplier_id,
-      transaction_date: updatedData.transaction_date,
-      delivery_date: updatedData.delivery_date,
-      total: updatedData.total,
-      approval_status: updatedData.approval_status,
-      delivery_status: updatedData.delivery_status,
-      payment_status: updatedData.payment_status,
-      remarks: updatedData.remarks,
-      items: updatedData.items,
-    })
-    .eq("po", po)
-    .select();
-
-  if (error) throw error;
-  return data;
 };
 
 export const deletePurchase = async (po) => {
@@ -283,7 +219,7 @@ export const updatePurchaseReceipt = async (purchaseId, receiptUrl) => {
 export const updateStatus = async (id, status) => {
   const { data, error } = await supabase
     .from("purchased_order")
-    .update({ approval_status: status })
+    .update({ approval_status: status, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
@@ -294,118 +230,36 @@ export const updateStatus = async (id, status) => {
   return data;
 };
 
-export const displayDeliveryHistory = async(id)=>{
-const { data, error } = await supabase
-    .from("delivery_status_history")
-    .select(`
-      *,
-
-      purchased_order (
-        id,
-        delivery_status
-      )
-    `)
-    .eq("purchased_order_id",id)
-    .order("created_at", { ascending: false });
-
-  if (error) throw error;
-  return data;
-}
-export const updateDeliveryStatus = async (id, delivery_status, remark) => {
-  // 1️⃣ Update current delivery status
-  const { error: updateError } = await supabase
-    .from("purchased_order")
-    .update({ delivery_status: delivery_status })
-    .eq("id", id);
-
-  if (updateError) {
-    throw new Error(updateError.message);
-  }
-
-  // 2️⃣ Insert history snapshot (status + remarks)
-  const { data: historyData, error: historyError } = await supabase
-    .from("delivery_status_history")
-    .insert([
-      {
-        purchased_order_id: id,
-        delivery_status,
-        remarks: remark,
-      },
-    ])
-    .select()
-    .single();
-
-  if (historyError) {
-    throw new Error(historyError.message);
-  }
-
-  return {
-    success: true,
-    history: historyData,
-  };
+export const updatePaymentHistory = async (poId, paymentdata) => {
+  return applyPaymentCore({
+    table: "purchased_order",
+    sourceType: "PO",
+    sourceId: poId,
+    paymentMethod: paymentdata.paymentMethod,
+    amount: Number(paymentdata.amountPay),
+  });
 };
 
-export const updatePaymentHistory = async (id, paymentdata) => {
-  const newPayment = Number(paymentdata.amountPay);
-
-  // 1️⃣ Get current amount_paid & total
-  const { data: currentOrder, error: fetchError } = await supabase
-    .from("purchased_order")
-    .select("amount_paid, total")
-    .eq("id", id)
-    .single();
-
-  if (fetchError) throw fetchError;
-
-  const currentPaid = Number(currentOrder.amount_paid || 0);
-  const totalAmount = Number(currentOrder.total);
-
-  // 2️⃣ ADD payment (this is what you were missing)
-  const updatedAmountPaid = currentPaid + newPayment;
-
-  // 3️⃣ Determine status
-  let paymentStatus = "Partially Paid";
-  if (updatedAmountPaid >= totalAmount) {
-    paymentStatus = "Paid";
-  }
-
-  // 4️⃣ Update purchased_order
-  const { data: poData, error: updateError } = await supabase
-    .from("purchased_order")
-    .update({
-      amount_paid: updatedAmountPaid,
-      payment_status: paymentStatus,
-    })
-    .eq("id", id)
-    .select()
-    .single();
-
-  if (updateError) throw updateError;
-
-  // 5️⃣ Insert payment history
-  const { data: paymentHistory, error: paymentError } = await supabase
-    .from("payment_history")
-    .insert({
-      purchased_order_id: id,
-      payment_method: paymentdata.paymentMethod,
-      amount_paid: newPayment, // store only THIS payment
-    })
-    .select()
-    .single();
-
-  if (paymentError) throw paymentError;
-
-  return { poData, paymentHistory };
+export const getPaymentHistory = async (poId) => {
+  return getPaymentHistoryCore("PO", poId);
 };
 
-export const getPaymentHistory = async (id) => {
-  const { data, error } = await supabase
-    .from("payment_history")
-    .select(`*`)
-    .eq("purchased_order_id",id)
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return data;
+export const displayDeliveryHistory = async (poId) => {
+  return getDeliveryHistoryCore("PO", poId);
+};
+
+export const updateDeliveryStatus = async (
+  poId,
+  deliveryStatus,
+  remarks
+) => {
+  return updateDeliveryStatusCore({
+    table: "purchased_order",
+    sourceType: "PO",
+    sourceId: poId,
+    deliveryStatus,
+    remark: remarks,
+  });
 };
 
 export const getBrands = async ()=>{
