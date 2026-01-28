@@ -25,9 +25,9 @@ export const addSalesInvoice = async(req,res) =>{
           });
         }
     
-        return res.status(500).json({
+        return res.status(400).json({
           code: "INVOICE_CREATE_FAILED",
-          message: "Failed to save invoice"
+          message: err.message // 🔴 THIS IS THE FIX
         });
       }
 }

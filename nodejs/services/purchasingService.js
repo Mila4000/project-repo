@@ -37,44 +37,46 @@ export const getAllPurchases = async () => {
 };
 
 
-export const createPurchase = async (payload) => {
+export const createPurchase = async (transaction) => {
+  console.log("Adding Purchase Order:", transaction);
+
   const {
     supplier,
     transaction_date,
     delivery_date,
+    items = [],
+    shipping_subtotal = 0,
+    discount_subtotal = 0,
     approval_status,
     delivery_status,
     payment_status,
     remarks,
-    receipt_url,
-    items = [],
-    warehouse,
-    shipping_subtotal = 0,
-    discount_subtotal = 0
-  } = payload;
+    receipt_url = null
+  } = transaction;
 
   if (!items.length) {
     throw new Error("Purchase must have at least one item");
   }
 
-  /**
-   * STEP 1: AUTHORITATIVE CALCULATIONS
-   */
   let merchandiseSubtotal = 0;
 
   const preparedItems = items.map(item => {
-    const lineTotal = item.quantity * item.unitPrice;
+    const quantity = Number(item.quantity);
+    const unitPrice = Number(item.unitPrice);
+    const lineTotal = quantity * unitPrice;
+
     merchandiseSubtotal += lineTotal;
 
     return {
+      item_id: item.id,                 
       product_name: item.name,
-      quantity: item.quantity,
-      expected_quantity: item.quantity,
-      unit_price: item.unitPrice,
+      quantity,
+      expected_quantity: quantity,
+      unit_price: unitPrice,
       line_total: lineTotal,
       type: item.type,
-      shipping: item.shipping,
-      discount: item.discount
+      shipping: Number(item.shipping) || 0,
+      discount: Number(item.discount) || 0
     };
   });
 
@@ -86,11 +88,11 @@ export const createPurchase = async (payload) => {
     merchandiseSubtotal + shippingSubtotal - discountSubtotal
   );
 
-  /**
-   * STEP 2: CREATE PURCHASE HEADER (ATOMIC RPC)
+  /*
+   * STEP 2: CALL ATOMIC RPC (DB DOES EVERYTHING)
    */
-  const { data: purchase, error: headerError } = await supabase.rpc(
-    "create_purchase_header",
+  const { data: purchase, error } = await supabase.rpc(
+    "create_purchase_order",
     {
       p_supplier_id: supplier,
       p_transaction_date: transaction_date,
@@ -103,36 +105,18 @@ export const createPurchase = async (payload) => {
       p_delivery_status: delivery_status,
       p_payment_status: payment_status,
       p_remarks: remarks,
-      p_receipt_url: null
+      p_receipt_url: receipt_url,
+      p_items: preparedItems
     }
   );
 
-  if (headerError) throw headerError;
-
-  /**
-   * STEP 3: INSERT LINE ITEMS
-   */
-  const itemsToInsert = preparedItems.map(item => ({
-    purchased_order_id: purchase.id,
-    warehouse,
-    item_code: "0-000-000",
-    ...item
-  }));
-  const { error: itemsError } = await supabase
-    .from("purchased_order_item")
-    .insert(itemsToInsert);
-
-  if (itemsError) {
-    await supabase
-      .from("purchased_order")
-      .delete()
-      .eq("id", purchase.id);
-
-    throw itemsError;
+  if (error) {
+    console.error("Create Purchase failed:", error);
+    throw error;
   }
 
-  /**
-   * DONE
+  /*
+   * STEP 3: RETURN CLEAN RESPONSE
    */
   return {
     ...purchase,

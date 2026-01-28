@@ -95,7 +95,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
     const handleAddItem = (newItem) => {
         setPurchaseItems((prev) => [
         ...prev,
-        { ...newItem, id: Date.now() },
+        { ...newItem },
         ]);
         handleCloseItemModal();
     };
@@ -122,6 +122,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
               customer: formValues.customer,
               transaction_date: new Date(formValues.transaction_date).toISOString(),
               items: purchaseItems.map(item => ({
+                id: item.id,
                 name: item.brand,
                 type: item.type,
                 quantity: Number(item.quantity),
@@ -169,7 +170,11 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
         
           } catch (err) {
             console.error("sales submission error:", err);
-            alert("An unexpected error occurred while saving the sales invoice.");
+
+            alert(
+                err?.message ||
+                "An unexpected error occurred while saving the sales invoice."
+            );
           }
     };
     const resetForm = () => {
@@ -233,20 +238,52 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
     // LOGIC: Categorized Subtotals
     const subtotals = purchaseItems.reduce((acc, item) => {
         const amount = parseFloat(item.total) || 0;
-        if (item.type === 'Unpack') acc.standard += amount;
-        else if (item.type === 'VIP') acc.premium += amount;
-        else acc.others += amount;
-        
-        acc.grandTotal += amount;
-        return acc;
-    }, { standard: 0, premium: 0, others: 0, grandTotal: 0 });
+        const shipping = parseFloat(item.shipping) || 0;
+        const discount = parseFloat(item.discount) || 0;
 
-    // Mapping back to your existing variable names for the design
-    const standardSubtotal = subtotals.standard; 
-    const premiumSubtotal = subtotals.premium;
-    const othersSubtotal = subtotals.others;
-    const grandTotal = subtotals.grandTotal;
-    
+        let category;
+
+        if (item.type === 'UNPACK' || item.type === 'Trading Items') {
+            category = 'standard';
+        } else if (item.type === 'VIP' || item.type === 'Commissary Items') {
+            category = 'premium';
+        } else {
+            category = 'others';
+        }
+
+        acc[category].subtotal += amount;
+        acc[category].shipping += shipping;
+        acc[category].discount += discount;
+
+        acc.grand.subtotal += amount;
+        acc.grand.shipping += shipping;
+        acc.grand.discount += discount;
+
+        return acc;
+    }, {
+        standard: { subtotal: 0, shipping: 0, discount: 0 },
+        premium: { subtotal: 0, shipping: 0, discount: 0 },
+        others: { subtotal: 0, shipping: 0, discount: 0 },
+        grand: { subtotal: 0, shipping: 0, discount: 0 }
+    });
+    const standardSubtotal = subtotals.standard.subtotal;
+    const standardShipping = subtotals.standard.shipping;
+    const standardDiscount = subtotals.standard.discount;
+
+    const premiumSubtotal = subtotals.premium.subtotal;
+    const premiumShipping = subtotals.premium.shipping;
+    const premiumDiscount = subtotals.premium.discount;
+
+    const othersSubtotal = subtotals.others.subtotal;
+    const othersShipping = subtotals.others.shipping;
+    const othersDiscount = subtotals.others.discount;
+
+    const grandTotal = subtotals.grand.subtotal;
+    const grandShipping = subtotals.grand.shipping;
+    const grandDiscount = subtotals.grand.discount;
+
+    // Optional: final payable amount
+    const grandReceivables = grandTotal + grandShipping - grandDiscount;
     if (!isOpen) return null;
     return (
         <>
@@ -440,8 +477,8 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                                         <tbody>
                                             <tr>
                                                 <td></td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Standard Items</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Premium Items</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Trading Items</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Commissary Items</td>
                                                 <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Other Items/Services</td>
                                             </tr>
                                             <tr className="bg-slate-200/50 dark:bg-slate-700/50">
@@ -450,18 +487,35 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{premiumSubtotal.toFixed(2)}</td>
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{othersSubtotal.toFixed(2)}</td>
                                             </tr>
-                                            <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">Shipping Subtotal</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                            <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">
+                                                    Shipping Subtotal
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {standardShipping.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {premiumShipping.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
+                                                    {othersShipping.toFixed(2)}
+                                                </td>
                                             </tr>
-                                            <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">Item Discount Subtotal</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                            <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">
+                                                    Item Discount Subtotal
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {standardDiscount.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {premiumDiscount.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
+                                                    {othersDiscount.toFixed(2)}
+                                                </td>
                                             </tr>
+
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 pb-6 text-xs text-slate-700 dark:text-slate-200">Order Discount</td>
                                                 <td className="py-3 px-4 pb-6 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
@@ -471,7 +525,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                                             <tr className="bg-slate-200/50 dark:bg-slate-700/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 font-bold dark:font-bold"></td>
                                                 <td colSpan={3} className="py-3 px-4 text-md text-slate-700 dark:text-slate-200 font-medium dark:font-bold text-end">
-                                                    <span className  = "mr-2 text-lg font-normal">Subtotal: </span> <span className = "text-lg ">{grandTotal.toFixed(2)}</span>
+                                                    <span className  = "mr-2 text-lg font-normal">Total Payment: </span> <span className = "text-lg ">{grandReceivables.toFixed(2)}</span>
                                                 </td>
                                             </tr>
                                         </tbody>

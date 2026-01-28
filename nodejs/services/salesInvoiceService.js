@@ -20,37 +20,38 @@ export const getAllSales = async () =>{
     return data;
 }
 
-export const addSales = async (transaction) =>{
-    const {
+export const addSales = async (transaction) => {
+  console.log("Adding Sales Invoice:", transaction);
+  const {
     customer,
     transaction_date,
-    merchandise_subtotal,
+    items = [],
     shipping_subtotal = 0,
     discount_subtotal = 0,
-    total,
-    items=[],
     approval_status,
     delivery_status,
     payment_status
   } = transaction;
 
-   /**
+  /*
    * STEP 1: AUTHORITATIVE CALCULATIONS
    */
   let merchandiseSubtotal = 0;
+
   const preparedItems = items.map(item => {
-    const lineTotal = item.quantity * item.unitPrice;
+    const lineTotal = Number(item.quantity) * Number(item.unitPrice);
     merchandiseSubtotal += lineTotal;
 
     return {
+      item_id: item.id,
       product_name: item.name,
-      quantity: item.quantity,
-      expected_quantity: item.quantity,
-      unit_price: item.unitPrice,
+      quantity: Number(item.quantity),
+      expected_quantity: Number(item.quantity),
+      unit_price: Number(item.unitPrice),
       line_total: lineTotal,
       type: item.type,
-      shipping: item.shipping,
-      discount: item.discount
+      shipping: Number(item.shipping) || 0,
+      discount: Number(item.discount) || 0
     };
   });
 
@@ -62,41 +63,33 @@ export const addSales = async (transaction) =>{
     merchandiseSubtotal + shippingSubtotal - discountSubtotal
   );
 
-  const { data: sales, error: headerError  } = await supabase.rpc(
+  /*
+   * STEP 2: CALL RPC (DB DOES THE REST)
+   */
+  const { data: sales, error } = await supabase.rpc(
     "create_sales_invoice",
     {
-      s_transaction_date: transaction_date,
       s_cust_id: customer,
-      s_merchandise_subtotal: merchandise_subtotal,
-      s_shipping_subtotal: shipping_subtotal,
-      s_discount_subtotal: discount_subtotal,
+      s_transaction_date: transaction_date,
+      s_merchandise_subtotal: merchandiseSubtotal,
+      s_shipping_subtotal: shippingSubtotal,
+      s_discount_subtotal: discountSubtotal,
       s_total: totalPayment,
       s_approval_status: approval_status,
       s_delivery_status: delivery_status,
       s_payment_status: payment_status,
+      s_items: preparedItems
     }
   );
 
-  if (headerError) throw headerError;
-  const itemsToInsert = preparedItems.map(item => ({
-    sales_invoice_id: sales.id,
-    item_code: "0-000-000",
-    ...item
-  }));
-
-  const { error: itemsError } = await supabase
-    .from("sales_invoice_item")
-    .insert(itemsToInsert);
-
-  if (itemsError) {
-    await supabase
-      .from("sales_invoice")
-      .delete()
-      .eq("id", sales.id);
-
-    throw itemsError;
+  if (error) {
+    console.error("Create Sales Invoice failed:", error);
+    throw error;
   }
 
+  /*
+   * STEP 3: RETURN CLEAN RESPONSE
+   */
   return {
     ...sales,
     items: preparedItems,
@@ -107,7 +100,7 @@ export const addSales = async (transaction) =>{
       totalPayment
     }
   };
-}
+};
 
 export const getSalesStats = async () => {
   const { data: sales, error: ordersError } = await supabase
@@ -138,7 +131,7 @@ export const getSalesStats = async () => {
     0
   );
 
-  const totalPayables = sales
+  const totalReceivables = sales
     .filter(s => s.payment_status !== "Paid")
     .reduce((sum, s) => sum + Number(s.total || 0), 0);
 
@@ -148,7 +141,7 @@ export const getSalesStats = async () => {
   return {
     totalPurchased,
     totalQuantity,
-    totalPayables,
+    totalReceivables,
     totalDeliveries
   };
   

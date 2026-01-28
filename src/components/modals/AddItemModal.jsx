@@ -3,12 +3,11 @@ import { Plus, X } from 'lucide-react';
 import CustomFormSelect from '../filter/CustomFormSelect'; 
 
 // Define the categories for the dropdown
-const TYPE_OPTIONS = [
-    { value: 'Standard Items', label: 'UNPACK' },
-    { value: 'Premium Items', label: 'VIP' },
-    { value: 'Valuable Items', label: 'VACUUM' },
-    { value: 'Other Items/Services', label: 'Other Items/Services' }
-];
+const TYPE_LABELS = {
+  UNPACK: "Trading Items",
+  VIP: "Commissary Items",
+  VACUUM: "Valuable Items",
+};
 
 function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
     /* =======================
@@ -35,7 +34,25 @@ function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
     /* =======================
     AUTO TOTAL CALCULATION
     ======================= */
+     const selectedItem = useMemo(() => {
+    if (!itemForm.brand) return null;
 
+    return loadItemList?.find(
+        (item) => item.item_name === itemForm.brand
+    ) || null;
+    }, [itemForm.brand, loadItemList]);
+
+
+    useEffect(() => {
+    if (!selectedItem) return;
+
+    setItemForm((prev) => ({
+        ...prev,
+        id: selectedItem.id,
+        unitPrice: selectedItem.suggested_retail_price ?? 0,
+        type: TYPE_LABELS[selectedItem.item_type] ?? selectedItem.item_type,
+    }));
+    }, [selectedItem]);
     useEffect(() => {
     const quantity = Number(itemForm.quantity) || 0;
     const unitPrice = Number(itemForm.unitPrice) || 0;
@@ -152,26 +169,36 @@ function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
                     {/* Brand Input */}
                     <div>
                         <CustomFormSelect
-                            label="Brand"
-                            name="brand"
-                            options={BRAND_OPTIONS}
-                            initialValue={itemForm.item_name}
-                            onSelect={handleSelectChange}
-                            placeholder="Select brand..."
+                        label="Brand"
+                        name="brand"
+                        options={BRAND_OPTIONS}
+                        initialValue={itemForm.brand}
+                        onSelect={handleSelectChange}
+                        placeholder="Select brand..."
                         />
-                        
+
                     </div>
 
-                    {/* Type Dropdown Select */}
+                    {/* Type autofilled */}
                     <div>
-                        <CustomFormSelect
-                            label="Type"
-                            name="type"
-                            options={TYPE_OPTIONS}
-                            initialValue={itemForm.type}
-                            onSelect={handleSelectChange}
-                            placeholder="Select item type..."
-                        />
+                    <label
+                        htmlFor="type"
+                        className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                    >
+                        Type
+                    </label>
+
+                    <input
+                        type="text"
+                        id="type"
+                        name="type"
+                        value={itemForm.type}
+                        disabled
+                        className="w-full mt-1 px-3 py-1.5 rounded-md border 
+                        bg-slate-200 dark:bg-slate-600 
+                        text-slate-700 dark:text-slate-200 
+                        cursor-not-allowed"
+                    />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -211,12 +238,18 @@ function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
                         <div>
                             <label htmlFor="unitPrice" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Unit Price</label>
                             <input 
-                                type="number" step="0.01" min="0" id="unitPrice" name="unitPrice"
+                                type="number"
+                                id="unitPrice"
+                                name="unitPrice"
                                 value={itemForm.unitPrice}
                                 onChange={handleItemChange}
-                                className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:border-blue-500"
+                                disabled
+                                className={`w-full mt-1 px-3 py-1.5 rounded-md border 
+                                bg-slate-200 dark:bg-slate-600 cursor-not-allowed
+                                `}
                                 required
-                            />
+                                />
+
                         </div>
                     </div>
 

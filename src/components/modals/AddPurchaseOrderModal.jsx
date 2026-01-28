@@ -80,7 +80,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
   const handleAddItem = (newItem) => {
     setPurchaseItems((prev) => [
       ...prev,
-      { ...newItem, id: Date.now() },
+      { ...newItem},
     ]);
     handleCloseItemModal();
   };
@@ -117,6 +117,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
       transaction_date: new Date(formValues.transaction_date).toISOString(),
       delivery_date: new Date(formValues.delivery_date).toISOString(),
       items: purchaseItems.map(item => ({
+         id: item.id,
         name: item.brand,
         type: item.type,
         quantity: Number(item.quantity),
@@ -167,8 +168,11 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
     handleClose();
 
   } catch (err) {
-    console.error("Purchase submission error:", err);
-    alert("An unexpected error occurred while saving the purchase order.");
+    console.error("PO submission error:", err);
+    alert(
+        err?.message ||
+        "An unexpected error occurred while saving the purchase order."
+    );
   }
 };
 

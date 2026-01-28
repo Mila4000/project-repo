@@ -1,40 +1,7 @@
 import React from 'react'
 import { DollarSign, Scale, Wallet, Truck} from 'lucide-react';
 
-const stats = [
-  {
-    title: "Total Sales",
-    value: "₱123,456.00",
-    icon: DollarSign,
-    color: "from-green-500 to-teal-600",
-    bgColor: "bg-emerald-100 dark:bg-emerald-900/20",
-    textColor: "text-emerald-600 dark:text-emerald-400",
-  },
-  {
-    title: "Total KG Sold",
-    value: "1,234 KG",
-    icon: Scale,
-    color: "from-purple-500 to-pink-600",
-    bgColor: "bg-purple-50 dark:bg-purple-900/20",
-    textColor: "text-purple-600 dark:text-purple-400",
-  },
-  {
-    title: "Total Paid",
-    value: "$500,000.00",
-    icon: Wallet,
-    color: "from-yellow-500 to-orange-600",
-    bgColor: "bg-amber-100 dark:bg-amber-900/20",
-    textColor: "text-amber-600 dark:text-amber-400",
-  },
-  {
-    title: "Total Finished Deliveries",
-    value: "1",
-    icon: Truck,
-    color: "from-blue-500 to-indigo-600",
-    bgColor: "bg-blue-100 dark:bg-indigo-900/20",
-    textColor: "text-blue-600 dark:text-indigo-400",
-  },
-];
+
 
 function SalesInvoiceStatsGrid( {stats}) {
    if (!stats) return null;
@@ -47,21 +14,21 @@ function SalesInvoiceStatsGrid( {stats}) {
         bgColor: "bg-emerald-100",
         textColor: "text-emerald-600",
       },
-      { title: "Total KG Purchased", 
+      { title: "Total KG Sold", 
         value: `${stats.totalQuantity.toLocaleString()} KG`,
         icon: Scale, color: "from-purple-500 to-pink-600", 
         bgColor: "bg-purple-50 dark:bg-purple-900/20", 
         textColor: "text-purple-600 dark:text-purple-400", 
       },
       {
-        title: "Total Payables",
-        value: `$${stats.totalPayables.toLocaleString()}`,
+        title: "Total Paid",
+        value: `$${stats.totalReceivables.toLocaleString()}`,
         icon: Wallet,
         bgColor: "bg-amber-100",
         textColor: "text-amber-600",
       },
       {
-        title: "Total Received Deliveries",
+        title: "Total Delivered Orders",
         value: stats.totalDeliveries,
         icon: Truck,
         bgColor: "bg-blue-100",

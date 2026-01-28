@@ -67,6 +67,7 @@ function DeliveryStatusModal({
             ]);
 
             setRemarks("");
+            onClose();
         } catch (error) {
             console.error("Update delivery status error:", error);
         } finally {

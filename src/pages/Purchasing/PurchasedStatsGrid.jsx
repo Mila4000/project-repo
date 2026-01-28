@@ -27,7 +27,7 @@ function PurchasedStatsGrid({ stats }) {
     },
     {
       title: "Total Received Deliveries",
-      value: stats.totalDeliveries,
+      value: stats.totalDeliveries.toLocaleString(),
       icon: Truck,
       bgColor: "bg-blue-100",
       textColor: "text-blue-600",

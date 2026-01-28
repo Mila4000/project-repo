@@ -26,9 +26,9 @@ export const createPurchase = async (req, res) => {
       });
     }
 
-    return res.status(500).json({
-      code: "PURCHASE_CREATE_FAILED",
-      message: "Failed to save purchase"
+     return res.status(400).json({
+      code: "INVOICE_CREATE_FAILED",
+      message: err.message // 🔴 THIS IS THE FIX
     });
   }
 };
