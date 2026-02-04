@@ -1,21 +1,19 @@
 import { supabase } from "../config/supabaseClient.js";
 
-export const getOrderTable = async () => {
+export const getSalesWeightChart = async () => {
   const { data, error } = await supabase
-    .from("purchased_order")
+    .from("monthly_sales_weight")
     .select(`
-      *,
-      supplier (
-        businessname
-      )
-    `)
-    .order("id", { ascending: false })
-    .limit(5);
+      month_label,
+      total_sales,
+      total_weight
+    `);
 
   if (error) throw error;
 
   return data;
 };
+
 
 export const getDashboardStats = async () => {
   const startOfCurrentMonth = new Date(
@@ -29,52 +27,83 @@ export const getDashboardStats = async () => {
     new Date().getMonth() - 1,
     1
   ).toISOString();
-
-  /* ---------------- ACTIVE CUSTOMERS ---------------- */
-
-  const { count: currentActiveCustomers } = await supabase
-    .from("customer")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "Active")
-    .gte("created_at", startOfCurrentMonth);
-
-  const { count: prevActiveCustomers } = await supabase
-    .from("customer")
-    .select("*", { count: "exact", head: true })
-    .eq("status", "Active")
-    .gte("created_at", startOfPrevMonth)
-    .lt("created_at", startOfCurrentMonth);
-
-  /* ---------------- TOTAL ORDERS ---------------- */
-
-  const { count: currentOrders } = await supabase
-    .from("purchased_order")
-    .select("*", { count: "exact", head: true })
-    .gte("transaction_date", startOfCurrentMonth);
-
-  const { count: prevOrders } = await supabase
-    .from("purchased_order")
-    .select("*", { count: "exact", head: true })
-    .gte("transaction_date", startOfPrevMonth)
-    .lt("transaction_date", startOfCurrentMonth);
-
-  /* ---------------- REVENUE ---------------- */
-  const { data: currentRevenue, error: currentRevenueError } =
+  /* ---------------- TOTAL SALES ---------------- */
+  const { data: currentSales, error: currentSalesError } =
     await supabase.from("sales_invoice")
     .select("total")
+    .eq("payment_status", "Paid")
     .gte("transaction_date", startOfCurrentMonth);
-  if (currentRevenueError) throw currentRevenueError;
-  const { data: prevRevenue, error: prevRevenueError } =
+  if (currentSalesError) throw currentSalesError;
+  const { data: prevSales, error: prevSalesError } =
     await supabase.from("sales_invoice")
     .select("total")
+    .eq("payment_status", "Paid")
     .gte("transaction_date", startOfPrevMonth)
     .lt("transaction_date", startOfCurrentMonth);
-  if (prevRevenueError) throw prevRevenueError;
+  if (prevSalesError) throw prevSalesError;
+  
 
-  const sumRevenue = (rows = []) =>
+  const sumSales = (rows = []) =>
   rows.reduce((sum, row) => sum + Number(row.total || 0), 0);
-  const currentRevenueTotal = sumRevenue(currentRevenue);
-  const prevRevenueTotal = sumRevenue(prevRevenue);
+  const currentSalesTotal = sumSales(currentSales);
+  const prevSalesTotal = sumSales(prevSales);
+  /* ---------------- KG Sold ---------------- */
+  const { data: currentSoldKG } = await supabase
+    .rpc("get_sold_kg_between", {
+      start_date: startOfCurrentMonth,
+      end_date: null
+    });
+
+  const { data: prevSoldKG } = await supabase
+    .rpc("get_sold_kg_between", {
+      start_date: startOfPrevMonth,
+      end_date: startOfCurrentMonth
+    });
+  /* ---------------- TOTAL RECEIVABLES ---------------- */
+  const { data: currentReceivables, error: currentReceivablesError } =
+    await supabase.from("sales_invoice")
+    .select("total")
+    .gte("transaction_date", startOfCurrentMonth);
+  if (currentReceivablesError) throw currentReceivablesError;
+  const { data: prevReceivables, error: prevReceivablesError } =
+    await supabase.from("sales_invoice")
+    .select("total")
+    .gte("transaction_date", startOfPrevMonth)
+    .lt("transaction_date", startOfCurrentMonth);
+  if (prevReceivablesError) throw prevReceivablesError;
+  
+
+  const receivablesTotal = (rows = []) =>
+  rows.reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const currentReceivablesTotal = receivablesTotal(currentReceivables);
+  const prevReceivablesTotal = receivablesTotal(prevReceivables);
+  /* ---------------- TOTAL PAYABLES ---------------- */
+  const { data: currentPayables, error: currentPayablesError } =
+    await supabase.from("purchased_order")
+    .select("total")
+    .eq("payment_status", "Unpaid")
+    .gte("transaction_date", startOfCurrentMonth);
+  if (currentPayablesError) throw currentPayablesError;
+  const { data: prevPayables, error: prevPayablesError } =
+    await supabase.from("purchased_order")
+    .select("total")
+    .eq("payment_status", "Unpaid")
+    .gte("transaction_date", startOfPrevMonth)
+    .lt("transaction_date", startOfCurrentMonth);
+  if (prevPayablesError) throw prevPayablesError;
+  
+
+  const payablesTotal = (rows = []) =>
+  rows.reduce((sum, row) => sum + Number(row.total || 0), 0);
+  const currentPayablesTotal = payablesTotal(currentPayables);
+  const prevPayablesTotal = payablesTotal(prevPayables);
+  /* ---------------- INACTIVE CUSTOMERS ---------------- */
+
+  const { count: currentInactiveCustomers } = await supabase
+    .from("customer")
+    .select("*", { count: "exact", head: true })
+    .eq("status", "Inactive");
+  
   /* ---------------- HELPERS ---------------- */
 
   const calcChange = (current, previous) => {
@@ -97,26 +126,32 @@ export const getDashboardStats = async () => {
     };
   };
 
-  const activeCustomersStats = calcChange(
-    currentActiveCustomers,
-    prevActiveCustomers
-  );
 
-  const ordersStats = calcChange(currentOrders, prevOrders);
-  const revenueStats = calcChange(currentRevenueTotal, prevRevenueTotal);
+  const salesStats = calcChange(currentSalesTotal, prevSalesTotal);
+  const kgSoldStats = calcChange(currentSoldKG, prevSoldKG);
+  const receivablesStats = calcChange(currentReceivablesTotal, prevReceivablesTotal);
+  const payablesStats = calcChange(currentPayablesTotal, prevPayablesTotal);
   return {
-    activeCustomers: {
-      value: currentActiveCustomers,
-      ...activeCustomersStats,
+    sales: {
+      value: currentSalesTotal,
+      ...salesStats,
     },
-    totalOrders: {
-      value: currentOrders,
-      ...ordersStats,
+    kgSold: {
+      value: currentSoldKG,
+      ...kgSoldStats,
     },
-    revenue: {
-      value: currentRevenueTotal,
-      ...revenueStats,
+    receivables: {
+      value: currentReceivablesTotal,
+      ...receivablesStats,
     },
+    payables: {
+      value: currentPayablesTotal,
+      ...payablesStats,
+    },
+    inactiveCustomers: {
+      value: currentInactiveCustomers
+    },
+    
   };
 };
 
@@ -143,5 +178,20 @@ export const getMonthlySalesExpenses = async () => {
 
   if (error) throw error;
 
+  return data;
+};
+export const getClientSupplierBalance = async () => {
+  const { data, error } = await supabase
+    .rpc("get_client_supplier_balance");
+
+  if (error) throw error;
+  return data;
+};
+
+export const getInventoryStatus = async () => {
+  const { data, error } = await supabase
+    .rpc("get_inventory_status");
+
+  if (error) throw error;
   return data;
 };

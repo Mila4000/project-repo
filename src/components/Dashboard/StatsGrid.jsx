@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
-  DollarSign,
-  Eye,
+  DollarSign,Scale,
+  UserX,
   ShoppingCart,
   Users,
 } from "lucide-react";
@@ -11,25 +11,34 @@ import {
 function StatsGrid() {
   
   const [statsData, setStatsData] = useState({
-    activeCustomers: {
+    sales: {
       value: 0,
       change: "0%",
       trend: "up",
     },
-    totalOrders: {
+    kgSold: {
       value: 0,
       change: "0%",
       trend: "up",
     },
-    revenue: {
+    receivables: {
       value: 0,
       change: "0%",
       trend: "up",
+    },
+    payables: {
+      value: 0,
+      change: "0%",
+      trend: "up",
+    },
+  
+    inactiveCustomers: {
+      value: 0
     },
   });
   
   useEffect(() => {
-    fetch("http://localhost:5000/api/dashboard/stats")
+    fetch(`${import.meta.env.VITE_API_URL}api/dashboard/stats`)
       .then(res => res.json())
       .then(data => setStatsData(data))
       .catch(err => console.error("Failed to fetch stats", err));
@@ -37,45 +46,53 @@ function StatsGrid() {
 
   const stats = [
     {
-      title: "Total Revenue",
-      value: `₱${statsData.revenue.value.toLocaleString()}`,
-      change: statsData.revenue.change,
-      trend: statsData.revenue.trend,
+      title: "Total Sales",
+      value: `₱${Number(statsData.sales.value).toFixed(2).toLocaleString()}`,
+      change: statsData.sales.change,
+      trend: statsData.sales.trend,
       icon: DollarSign,
       color: "from-green-500 to-teal-600",
       bgColor: "bg-emerald-50 dark:bg-emerald-900/20",
       textColor: "text-emerald-600 dark:text-emerald-400",
     },
     {
-      title: "Active Customers",
-      value: statsData.activeCustomers.value.toLocaleString(),
-      change: statsData.activeCustomers.change,
-      trend: statsData.activeCustomers.trend,
-      icon: Users,
-      color: "from-blue-500 to-indigo-600",
-      bgColor: "bg-blue-50 dark:bg-blue-900/20",
-      textColor: "text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Total Orders",
-      value: statsData.totalOrders.value.toLocaleString(),
-      change: statsData.totalOrders.change,
-      trend: statsData.totalOrders.trend,
-      icon: ShoppingCart,
-      color: "from-purple-500 to-pink-600",
-      bgColor: "bg-purple-50 dark:bg-purple-900/20",
-      textColor: "text-purple-600 dark:text-purple-400",
-    },
-    {
-      title: "Page Views",
-      value: "32,450",
-      change: "-2.3%",
-      trend: "down",
-      icon: Eye,
+      title: "Total KG of items sold",
+      value: `${statsData.kgSold.value.toLocaleString()} kg`,
+      change: statsData.kgSold.change,
+      trend: statsData.kgSold.trend,
+      icon: Scale,
       color: "from-orange-500 to-red-600",
       bgColor: "bg-orange-50 dark:bg-orange-900/20",
       textColor: "text-orange-600 dark:text-orange-400",
     },
+    {
+      title: "Total Receivables",
+      value: `₱${Number(statsData.receivables.value).toFixed(2).toLocaleString()}`,
+      change: statsData.receivables.change,
+      trend: statsData.receivables.trend,
+      icon: Users,
+      color: "from-orange-500 to-red-600",
+      bgColor: "bg-orange-50 dark:bg-orange-900/20",
+      textColor: "text-orange-600 dark:text-orange-400",
+    },
+    {
+      title: "Total Payables",
+      value: `₱${Number(statsData.payables.value).toFixed(2).toLocaleString()}`,
+      change: statsData.payables.change,
+      trend: statsData.payables.trend,
+      icon: Scale,
+      color: "from-orange-500 to-red-600",
+      bgColor: "bg-orange-50 dark:bg-orange-900/20",
+      textColor: "text-orange-600 dark:text-orange-400",
+    },
+    {
+      title: "Inactive Customers",
+      value: statsData.inactiveCustomers.value.toLocaleString(),
+      icon: UserX,
+      color: "from-red-500 to-red-600",
+      bgColor: "bg-red-50 dark:bg-red-900/20",
+      textColor: "text-red-600 dark:text-red-400",
+    }
   ];
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -91,16 +108,27 @@ function StatsGrid() {
               <p className="text-3xl font-bold text-slate-800 dark:text-white mb-4">
                 {stats.value}
               </p>
-              <div className="flex items-center space-x-2">
-                {stats.trend === "up" ? (<ArrowUpRight className="w-4 h-4 text-emerald-500"/> 
-                ) : ( 
-                <ArrowDownRight className="w-4 h-4 text-red-500" /> 
-                )}
-                <span className={`text-sm font-semibold ${stats.trend === "up" ? "text-emerald-500" : "text-red-500"}`}>{stats.change}</span>
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                  vs Last Month
-                </span>
-              </div>
+              {stats.trend && stats.change && (
+                <div className="flex items-center space-x-2">
+                  {stats.trend === "up" ? (
+                    <ArrowUpRight className="w-4 h-4 text-emerald-500" />
+                  ) : (
+                    <ArrowDownRight className="w-4 h-4 text-red-500" />
+                  )}
+
+                  <span
+                    className={`text-sm font-semibold ${
+                      stats.trend === "up" ? "text-emerald-500" : "text-red-500"
+                    }`}
+                  >
+                    {stats.change}
+                  </span>
+
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    vs Last Month
+                  </span>
+                </div>
+              )}
             </div>
             <div 
             className={`p-3 rounded-xl ${stats.bgColor} group-hover:scale-110 transition-all duration-300`}>
@@ -109,13 +137,14 @@ function StatsGrid() {
           </div>
 
           {/* Progressbar */}
-            <div className="mt-4 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-              <div 
-                className={`h-full bg-gradient-to-r ${stats.color} rounded-full transition-all duration-100`}
-                style={{ width: stats.trend === "up" ? "75%" : "45%"}}
-                >
+            {stats.trend && (
+              <div className="mt-4 h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className={`h-full bg-gradient-to-r ${stats.color} rounded-full transition-all duration-300`}
+                  style={{ width: stats.trend === "up" ? "75%" : "45%" }}
+                />
               </div>
-            </div>
+            )}
         </div>
         );
         })}

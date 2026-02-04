@@ -95,7 +95,7 @@ function SalesInvoiceTable({ orders, onEdit, onDelete,onView, onViewReceipt, cus
 
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            ₱{order.total}
+                            ₱{Number(order.total).toFixed(2)} 
                           </span>
                         </td>
 

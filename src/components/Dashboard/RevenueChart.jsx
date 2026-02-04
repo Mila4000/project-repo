@@ -10,7 +10,13 @@ import {
 } from "recharts";
 
 function RevenueChart({revenueChartData}) {
-
+  const formatMoney = (value) => {
+    const num = Math.trunc(Number(value) * 100) / 100;
+    return `₱${num.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
   const data  = revenueChartData ?? [];
 
   return (
@@ -67,7 +73,9 @@ function RevenueChart({revenueChartData}) {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `₱${value / 1000}k`}
+                tickFormatter={(value) =>
+                  `₱${(Math.trunc(value * 100) / 100).toLocaleString()}`
+                }
               />
               <Tooltip
                 contentStyle={{
@@ -76,7 +84,7 @@ function RevenueChart({revenueChartData}) {
                   borderRadius: "12px",
                   boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
                 }}
-                formatter={(value) => [`₱${value.toLocaleString()}`, ""]}
+                 formatter={(value) => [formatMoney(value), ""]} 
               />
               <Bar
                 dataKey="sales"
@@ -108,4 +116,4 @@ function RevenueChart({revenueChartData}) {
   )
 }
 
-export default RevenueChart;
+export default RevenueChart

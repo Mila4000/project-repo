@@ -131,8 +131,8 @@ export const getSalesStats = async () => {
     0
   );
 
-  const totalReceivables = sales
-    .filter(s => s.payment_status !== "Paid")
+  const totalPaid = sales
+    .filter(s => s.payment_status === "Paid")
     .reduce((sum, s) => sum + Number(s.total || 0), 0);
 
   const totalDeliveries = sales.filter(
@@ -141,7 +141,7 @@ export const getSalesStats = async () => {
   return {
     totalPurchased,
     totalQuantity,
-    totalReceivables,
+    totalPaid,
     totalDeliveries
   };
   

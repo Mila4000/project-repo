@@ -132,7 +132,7 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            ₱{order.total} 
+                            ₱{Number(order.total).toFixed(2)} 
                           </span>
                         </td>
                         <td className="p-4">

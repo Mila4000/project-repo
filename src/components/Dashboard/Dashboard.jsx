@@ -2,20 +2,24 @@ import React,{useEffect, useState} from 'react'
 import StatsGrid from './StatsGrid';
 import ChartSection from './ChartSection';
 import TableSection from './TableSection';
-import ActivityFeed from './ActivityFeed';
+import InventoryStatus from './InventoryStatus';
 
 
 function Dashboard() {
 
   useEffect(() => {
-      fetchOrderTable();
+      fetchSalesWeightChart();
       fetchSalesTable();
       getRevenueChartData();
+      getBalanceChartData();
+      getInventoryStatus();
   },[]);
 
-  const [orderTableData, setOrderTableData] = useState([]);
+  const [salesWeightData, setSalesWeightData] = useState([]);
   const [salesTableData, setSalesTableData] = useState([]);
   const [revenueChartData, setRevenueChartData] = useState([]);
+  const [clientSupplierBalanceData, setClientSupplierBalanceData] = useState([]);
+  const [inventoryStatusData, setInventoryStatusData] = useState([]);
   const fetchSalesTable = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/dashboard/sales-table');
@@ -29,22 +33,22 @@ function Dashboard() {
     }
   };
 
-  const fetchOrderTable = async () => {
+  const fetchSalesWeightChart = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/dashboard/orders');
+      const res = await fetch('http://localhost:5000/api/dashboard/sales-weight-chart');
 
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
       }
       const data = await res.json();
-      setOrderTableData(data);
+      setSalesWeightData(data);
     } catch (err) {
       console.error("Fetch failed:", err);
     }
   };
   const getRevenueChartData = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/dashboard');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`);
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
       }
@@ -52,6 +56,34 @@ function Dashboard() {
       setRevenueChartData(data);
       console.log("Revenue Chart Data:", data);
     } catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
+  const getBalanceChartData = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/client-supplier-balance-chart`);
+      if (!res.ok) {
+        throw new Error(`HTTP error: ${res.status}`);
+      }
+      const data = await res.json();
+      setClientSupplierBalanceData(data);
+      console.log("Client Supplier Balance Data:", data);
+    
+    }
+    catch (err) {
+      console.error("Fetch failed:", err);
+    }
+  };
+  const getInventoryStatus = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/inventory-status`);
+      if (!res.ok) {
+        throw new Error(`HTTP error: ${res.status}`);
+      }
+      const data = await res.json();
+      setInventoryStatusData(data);
+    }
+    catch (err) {
       console.error("Fetch failed:", err);
     }
   };
@@ -69,11 +101,14 @@ function Dashboard() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <TableSection
-          ordertable={orderTableData}
+          salesandweightdata={salesWeightData}
+          balanceData={clientSupplierBalanceData}
           />
         </div>
         <div>
-          <ActivityFeed/>
+          <InventoryStatus
+          inventoryStatusData={inventoryStatusData}
+          />
         </div>
       </div>
     </div>

@@ -24,7 +24,7 @@ const warehouseData = [
 /*                             MAIN COMPONENT                                 */
 /* -------------------------------------------------------------------------- */
 
-function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
+function ViewPurchaseOrderModal({ isOpen, onClose, displayData, itemList}) {
   /* ----------------------------- STATE ----------------------------------- */
     const [isPayOpen, setIsPayOpen] = useState(false);
     const [isEditingItems, setIsEditingItems] = useState(false);
@@ -46,7 +46,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     const handleReject = async(id) => {
        try {
         const response = await fetch(
-            `http://localhost:5000/api/purchasing/reject/${id}`,
+            `${import.meta.env.VITE_API_URL}/api/purchasing/reject/${id}`,
             {
             method: "PATCH",
             headers: {
@@ -202,6 +202,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
     /* ----------------------------- GUARD ----------------------------------- */
     if (!isOpen) return null;
     /* ----------------------------- JSX ------------------------------------- */
+    console.log("Display Data:", displayData);
     return (
     <>
         <div className="fixed inset-0 z-40 overflow-y-auto bg-black/20 dark:bg-black/30">
@@ -277,7 +278,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
                 </label>
                 <input
                 type="text"
-                value={displayData.purchased_order_item[0]?.warehouse}
+                value={displayData.warehouse}
                 disabled
                 className="mt-1 h-9 w-full cursor-not-allowed rounded-md
                             border border-transparent bg-slate-100 px-3 py-1.5
@@ -537,6 +538,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
         isOpen={isAddItemModalOpen}
         onClose={handleCloseModals}
         onAddItem={handleAddLocalItem}
+        loadItemList={itemList}
         />
 
         <EditItemModal
@@ -544,6 +546,7 @@ function ViewPurchaseOrderModal({ isOpen, onClose, displayData }) {
         onClose={handleCloseModals}
         editingItem={editingItem}
         onSaveLocalItem={handleSaveLocalItem}
+        loadItemList={itemList}
         />
         <DeliveryStatusModal 
             isOpen={isPayOpen} 

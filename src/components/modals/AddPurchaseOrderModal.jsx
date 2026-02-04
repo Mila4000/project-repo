@@ -1,8 +1,9 @@
 import React, { useState,useMemo, useEffect } from "react";
-import { Plus, Trash2, X } from "lucide-react";
+import { Plus, Trash2, X , Pencil} from "lucide-react";
 
 import CustomFormSelect from "../filter/CustomFormSelect";
 import AddItemModal from "./AddItemModal";
+import EditItemModal from "./EditItemModal";
 import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
 import { uploadReceipt } from "../../utils/storageHelpers";
 import { fetchPoPreview  } from "../../utils/previewOrder";
@@ -21,7 +22,7 @@ const warehouseData = [
 /*                             MAIN COMPONENT                                 */
 /* -------------------------------------------------------------------------- */
 
-function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
+function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
   /* ----------------------------- STATE ----------------------------------- */
 
   const [suppliers, setSuppliers] = useState([]);
@@ -35,6 +36,8 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [purchaseItems, setPurchaseItems] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
   const getToday = () => {
     return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
   };
@@ -70,23 +73,32 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
     setPurchaseItems([]);
     setReceiptFileName("No file chosen");
   };
+   const handleSaveLocalItem = (item) => {
+    setPurchaseItems(prev =>
+        prev.map(i => (i.id === item.id ? item : i))
+    );
+    setIsEditItemModalOpen(false);
+    };
   const handleClose = () => {
     resetForm();
     onClose(); // this is the parent's closeModal()
   };
+  const handleEditModal = () => {
+    setIsEditItemModalOpen(false);
+  }
   const handleOpenItemModal = () => setIsItemModalOpen(true);
   const handleCloseItemModal = () => setIsItemModalOpen(false);
 
   const handleAddItem = (newItem) => {
     setPurchaseItems((prev) => [
       ...prev,
-      { ...newItem},
+      { ...newItem },
     ]);
     handleCloseItemModal();
   };
 
   const handleRemoveItem = (id) => {
-    setPurchaseItems((prev) => prev.filter((item) => item.id !== id));
+    setPurchaseItems((prev) => prev.filter((item) => item.temp_id !== id));
   };
 
   const handleFileChange = (e) => {
@@ -98,7 +110,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
   const handleFormSubmit = async (e) => {
   e.preventDefault();
-
+  
   if (!purchaseItems.length) {
     alert("Please add at least one item before submitting the purchase order.");
     return;
@@ -108,7 +120,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
     alert("Please complete all required fields.");
     return;
   }
-
+  console.log("purchaseItems on Submit:", purchaseItems);
   try {
     // 1️⃣ CREATE PURCHASE (NO RECEIPT YET)
     const newPurchase = {
@@ -117,11 +129,11 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
       transaction_date: new Date(formValues.transaction_date).toISOString(),
       delivery_date: new Date(formValues.delivery_date).toISOString(),
       items: purchaseItems.map(item => ({
-         id: item.id,
-        name: item.brand,
+        id: item.id,
+        name: item.product_name,
         type: item.type,
         quantity: Number(item.quantity),
-        unitPrice: Number(item.unitPrice),
+        unitPrice: Number(item.unit_price),
         discount:Number(item.discount),
         shipping:Number(item.shipping),
 
@@ -137,7 +149,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
       payment_status: "Unpaid",
       remarks: formValues.remarks
     };
-
+    console.log("Submitting New Purchase:", newPurchase);
     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -175,7 +187,39 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
     );
   }
 };
+    const handleAddLocalItem = (item) => {
+      console.log("Adding Local Item:", item);
+    const restructuredItem = {
+        id: item.id,
+        temp_id: crypto.randomUUID(), // Unique temp ID for local management
+        product_name: item.brand,
+        type: item.type,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unitPrice),
+        line_total:
+        Number(item.quantity) * Number(item.unitPrice),
 
+        // frontend-only fields (NOT sent to DB)
+        shipping: Number(item.shipping ?? 0),
+        discount: Number(item.discount ?? 0),
+    };
+
+
+    setPurchaseItems(prev => [
+        ...prev,
+        {
+        ...restructuredItem
+        }
+    ]);
+
+    handleCloseItemModal();
+    };
+
+  
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setIsEditItemModalOpen(true);
+    };
 
   /* ----------------------------- COMPUTED -------------------------------- */
 
@@ -219,7 +263,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
     fetchSuppliers();
   }, [isOpen]);
-    useEffect(() => {
+  useEffect(() => {
     if (!isOpen) return;
 
     const loadPreview = async () => {
@@ -229,7 +273,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
     loadPreview();
   }, [isOpen, formValues.transaction_date]);
-
+  
   /* ----------------------------- GUARD ----------------------------------- */
 
   if (!isOpen) return null;
@@ -253,7 +297,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
 
                     <form onSubmit={handleFormSubmit} className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                             <div>
+                            <div>
                               <label
                                 htmlFor="PONumber"
                                 className="block text-sm font-medium text-slate-700 dark:text-slate-300"
@@ -275,6 +319,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
                                 "
                               />
                             </div>
+                            
                             {/* SUPPLIER FIELD */}
                             <CustomFormSelect
                             label="Supplier"
@@ -354,15 +399,28 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
                                                 key={item.id} 
                                                 className = "border-b border-slate-300 dark:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
                                             >
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.brand}</td>
+                                              {console.log("Rendering Item:", item)}
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.product_name}</td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.type}</td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.quantity}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.unitPrice.toFixed(2)}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{(item.total).toFixed(2)}</td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  ₱{Number(item.unit_price).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  ₱{Number(item.line_total).toFixed(2)}
+                                                </td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
                                                     <button 
                                                         type="button" 
-                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        onClick={() => handleEditItem(item)}
+                                                        className="text-blue-500 hover:text-blue-700 p-1 rounded transition-colors cursor-pointer"
+                                                        aria-label={`Edit item ${item.brand}`}
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => handleRemoveItem(item.temp_id)}
                                                         className="text-red-500 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
                                                         aria-label={`Remove item ${item.brand}`}
                                                     >
@@ -486,9 +544,16 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase,itemList }) {
             <AddItemModal 
                 isOpen={isItemModalOpen} 
                 onClose={handleCloseItemModal} 
-                onAddItem={handleAddItem} 
+                onAddItem={handleAddLocalItem} 
                 loadItemList={itemList}
             />
+            <EditItemModal
+                isOpen={isEditItemModalOpen}
+                onClose={handleEditModal}
+                editingItem={editingItem}
+                onSaveLocalItem={handleSaveLocalItem}
+                loadItemList={itemList}
+                />
         </>
     );
 }

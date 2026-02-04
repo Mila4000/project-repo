@@ -8,8 +8,8 @@ function SalesInvoiceStatsGrid( {stats}) {
   
     const gridStats = [
       {
-        title: "Total Sales (in ₱)",
-        value: `₱${stats.totalPurchased.toLocaleString()}`,
+        title: "Total Receivables (in ₱)",
+        value: `₱${Number(stats.totalPurchased).toFixed(2).toLocaleString()}`,
         icon: DollarSign,
         bgColor: "bg-emerald-100",
         textColor: "text-emerald-600",
@@ -22,13 +22,13 @@ function SalesInvoiceStatsGrid( {stats}) {
       },
       {
         title: "Total Paid",
-        value: `$${stats.totalReceivables.toLocaleString()}`,
+        value: `$${Number(stats.totalPaid).toFixed(2).toLocaleString()}`,
         icon: Wallet,
         bgColor: "bg-amber-100",
         textColor: "text-amber-600",
       },
       {
-        title: "Total Delivered Orders",
+        title: "Total Finished Deliveries",
         value: stats.totalDeliveries,
         icon: Truck,
         bgColor: "bg-blue-100",

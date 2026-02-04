@@ -7,51 +7,9 @@ import RowLimiter from '../../components/filter/RowLimiter';
 import TablePagination from '../../components/pagination/TablePagination';
 import AddReceivedItemsModal from '../../components/modals/AddReceivedItemsModal'; 
 import EditReceivedItemsModal from '../../components/modals/EditReceivedItemsModal';
+import ViewDeliveryReceiptModal from '../../components/modals/ViewDeliveryReceiptModal';
 
 const ALL_OPTION = 'All';
-
-const ReceivedItemsData = [
-  {
-    PO: 'PO-123456',
-    itemName: 'Chicken Thighs',
-    supplier: 'Earl Meats',
-    transaction_date: 'Sep 21, 2025',
-    deliveryStatus: 'Order Placed',
-    expectedQuantity: '80',
-    actualQuantity: '~',
-    remarks: 'Chicken Restock'
-  },
-  {
-    PO: 'PO-135790',
-    itemName: 'Fresh Beef',
-    supplier: 'Javier Meats',
-    transaction_date: 'Sep 20, 2025',
-    deliveryStatus: 'Delivered',
-    expectedQuantity: '90',
-    actualQuantity: '10',
-    remarks: 'Chicken Restock'
-  },
-  {
-    PO: "PO-001122",
-    itemName: 'Chicken Thighs',
-    supplier: "Reyes Farms",
-    transaction_date: "Nov 28, 2025",
-    deliveryStatus: 'Delivered',
-    expectedQuantity: '0',
-    actualQuantity: '10',
-    remarks: 'Chicken Restock'
-  },
-  {
-    PO: "PO-765432",
-    itemName: "Lettuce",
-    supplier: "Fresh Produce Co.",
-    transaction_date: "Dec 09, 2025",
-    deliveryStatus: 'Delivered',
-    expectedQuantity: "0",
-    actualQuantity: "10",
-    remarks: "LETTUCE ORDER"
-  }
-];
 
 // --- DATE HELPER FUNCTIONS ---
 const parseDate = (dateString) => {
@@ -75,6 +33,8 @@ function ReceivedItems() {
   ========================= */
   const [stats, setStats] = useState(null);
   const [items, setItems] = useState([]);
+   const [dataView, setDataView] = useState([]);
+   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   /* =========================
     ICON CONFIG
   ========================= */
@@ -201,8 +161,18 @@ function ReceivedItems() {
       console.error('Failed to update received item', err);
     }
   };
-
-
+      const handleView = (order) => {
+        setDataView(order);
+        setIsEditModalOpen(true);
+    };
+    const openViewModal = (order) => {
+        setDataView(order);
+        setIsViewModalOpen(true);
+    };
+    const closeViewModal = () => {
+        setDataView(null);
+        setIsViewModalOpen(false);
+    };
   /* =========================
     FETCHING
   ========================= */
@@ -347,7 +317,11 @@ function ReceivedItems() {
           iconProps={iconProps}
         />
 
-        <ReceivedItemsTable orders={paginatedOrders} onEdit={handleEdit} onDelete={handleDelete} />
+        <ReceivedItemsTable 
+        orders={paginatedOrders}
+        onView={handleView}
+        onViewReceipt={openViewModal} 
+        onDelete={handleDelete} />
 
         <div className = "flex items-center justify-between mb-3">
           <RowLimiter
@@ -369,8 +343,14 @@ function ReceivedItems() {
         <EditReceivedItemsModal 
             isOpen={isEditModalOpen} 
             onClose={() => setIsEditModalOpen(false)} 
-            itemData={itemToEdit}
+            itemData={dataView}
             onSave={handleSaveEdit}
+        />
+        <ViewDeliveryReceiptModal
+            isOpen={isViewModalOpen}
+            onClose={closeViewModal}
+            displayData={dataView}
+            transactType="purchasing"
         />
     </div>
   );

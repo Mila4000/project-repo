@@ -1,16 +1,15 @@
-    import React, { useState, useEffect } from 'react';
+    import React, { useState, useMemo, useEffect } from 'react';
     import { Plus, X } from 'lucide-react'; 
     import CustomFormSelect from '../filter/CustomFormSelect'; 
 
     // Define the categories for the dropdown
-    const TYPE_OPTIONS = [
-        { value: 'Standard Items', label: 'UNPACK' },
-        { value: 'Premium Items', label: 'VIP' },
-        { value: 'Valuable Items', label: 'VACUUM' },
-        { value: 'Other Items/Services', label: 'Other Items/Services' }
-    ];
+    const TYPE_LABELS = {
+    UNPACK: "Trading Items",
+    VIP: "Commissary Items",
+    VACUUM: "Valuable Items",
+    };
 
-    function EditItemModal({isOpen, onClose, editingItem, onSaveLocalItem }) {
+    function EditItemModal({isOpen, onClose, editingItem, onSaveLocalItem, loadItemList}) {
         /* =======================
         ITEM FORM STATE
         ======================= */
@@ -24,7 +23,7 @@
         discount: 0,
         total: 0,
         });
-
+                console.log("Editing Item:", editingItem);
         /* =======================
         AUTO TOTAL CALCULATION
         ======================= */
@@ -43,26 +42,52 @@
         }
         }, [editingItem]);
 
-
+            const BRAND_OPTIONS = [
+        ...new Map(
+            loadItemList?.map(item => [item.item_name, {
+            value: item.item_name,
+            label: item.item_name,
+            }])
+        ).values()
+    ];  
+        const selectedItem = useMemo(() => {
+        if (!itemForm.brand) return null;
+    
+        return loadItemList?.find(
+            (item) => item.item_name === itemForm.brand
+        ) || null;
+        }, [itemForm.brand, loadItemList]);
+    
         /* =======================
         INPUT HANDLERS
         ======================= */
-        useEffect(() => {
-        const qty = Number(itemForm.quantity) || 0;
-        const price = Number(itemForm.unitPrice) || 0;
-        const ship = Number(itemForm.shipping) || 0;
-        const disc = Number(itemForm.discount) || 0;
-
-        setItemForm(prev => ({
-            ...prev,
-            total: qty * price + ship - disc,
-        }));
-        }, [
-        itemForm.quantity,
-        itemForm.unitPrice,
-        itemForm.shipping,
-        itemForm.discount,
-        ]);
+       useEffect(() => {
+          if (!selectedItem) return;
+      
+          setItemForm((prev) => ({
+              ...prev,
+              id: selectedItem.id,
+              unitPrice: selectedItem.suggested_retail_price ?? 0,
+              type: TYPE_LABELS[selectedItem.item_type] ?? selectedItem.item_type,
+          }));
+          }, [selectedItem]);
+      
+          useEffect(() => {
+          const quantity = Number(itemForm.quantity) || 0;
+          const unitPrice = Number(itemForm.unitPrice) || 0;
+          const shipping = Number(itemForm.shipping) || 0;
+          const discount = Number(itemForm.discount) || 0;
+      
+          setItemForm((prev) => ({
+              ...prev,
+              total: quantity * unitPrice + shipping - discount,
+              }));
+          }, [
+          itemForm.quantity,
+          itemForm.unitPrice,
+          itemForm.shipping,
+          itemForm.discount,
+          ]);
         // Standard input handler
         const handleItemChange = (e) => {
             const { name, value, type } = e.target;
@@ -111,6 +136,11 @@
         ======================= */
 
         if (!isOpen) return null;
+
+
+        console.log("Load Item List:", loadItemList);
+        console.log("Selected Item:", selectedItem);
+        console.log("Item Form State:", itemForm);
         return (
             <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center">
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>
@@ -124,26 +154,37 @@
                     <form onSubmit={handleSave} className="space-y-4">
                         {/* Brand Input */}
                         <div>
-                            <label htmlFor="brand" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Brand</label>
-                            <input 
-                                type="text" id="brand" name="brand"
-                                value={itemForm.brand}
-                                onChange={handleItemChange}
-                                className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500"
-                                required
+                            <CustomFormSelect
+                            label="Brand"
+                            name="brand"
+                            options={BRAND_OPTIONS}
+                            initialValue={itemForm.brand}
+                            onSelect={handleSelectChange}
+                            placeholder="Select brand..."
                             />
+
                         </div>
 
-                        {/* Type Dropdown Select */}
-                        <div>
-                            <CustomFormSelect
-                                label="Type"
-                                name="type"
-                                options={TYPE_OPTIONS}
-                                initialValue={itemForm.type}
-                                onSelect={handleSelectChange}
-                                placeholder="Select item type..."
-                            />
+                        {/* Type*/}
+                         <div>
+                        <label
+                            htmlFor="type"
+                            className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                        >
+                            Type
+                        </label>
+
+                        <input
+                            type="text"
+                            id="type"
+                            name="type"
+                            value={itemForm.type}
+                            disabled
+                            className="w-full mt-1 px-3 py-1.5 rounded-md border 
+                            bg-slate-200 dark:bg-slate-600 
+                            text-slate-700 dark:text-slate-200 
+                            cursor-not-allowed"
+                        />
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -183,12 +224,18 @@
                             <div>
                                 <label htmlFor="unitPrice" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Unit Price</label>
                                 <input 
-                                    type="number" step="0.01" min="0" id="unitPrice" name="unitPrice"
+                                    type="number"
+                                    id="unitPrice"
+                                    name="unitPrice"
                                     value={itemForm.unitPrice}
                                     onChange={handleItemChange}
-                                    className="w-full mt-1 px-3 py-1.5 text-slate-700 dark:text-slate-200 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 focus:outline-none focus:border-blue-500"
+                                    disabled
+                                    className={`w-full mt-1 px-3 py-1.5 rounded-md border 
+                                    bg-slate-200 dark:bg-slate-600 cursor-not-allowed
+                                    `}
                                     required
-                                />
+                                    />
+
                             </div>
                         </div>
 

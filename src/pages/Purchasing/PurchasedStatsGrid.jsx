@@ -7,7 +7,7 @@ function PurchasedStatsGrid({ stats }) {
   const gridStats = [
     {
       title: "Total Purchased(in ₱)",
-      value: `₱${stats.totalPurchased.toLocaleString()}`,
+      value: `₱${Number(stats.totalPurchased).toFixed(2).toLocaleString()}`,
       icon: DollarSign,
       bgColor: "bg-emerald-100",
       textColor: "text-emerald-600",
@@ -20,7 +20,7 @@ function PurchasedStatsGrid({ stats }) {
     },
     {
       title: "Total Payables",
-      value: `$${stats.totalPayables.toLocaleString()}`,
+      value: `$${Number(stats.totalPayables).toFixed(2).toLocaleString()}`,
       icon: Wallet,
       bgColor: "bg-amber-100",
       textColor: "text-amber-600",

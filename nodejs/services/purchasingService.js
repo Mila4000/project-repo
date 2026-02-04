@@ -44,6 +44,7 @@ export const createPurchase = async (transaction) => {
     supplier,
     transaction_date,
     delivery_date,
+    warehouse,
     items = [],
     shipping_subtotal = 0,
     discount_subtotal = 0,
@@ -58,6 +59,9 @@ export const createPurchase = async (transaction) => {
     throw new Error("Purchase must have at least one item");
   }
 
+  /*
+   * STEP 1: AUTHORITATIVE CALCULATIONS
+   */
   let merchandiseSubtotal = 0;
 
   const preparedItems = items.map(item => {
@@ -68,7 +72,7 @@ export const createPurchase = async (transaction) => {
     merchandiseSubtotal += lineTotal;
 
     return {
-      item_id: item.id,                 
+      item_id: item.id,                  // 🔑 MUST match public.items.id
       product_name: item.name,
       quantity,
       expected_quantity: quantity,
@@ -97,6 +101,7 @@ export const createPurchase = async (transaction) => {
       p_supplier_id: supplier,
       p_transaction_date: transaction_date,
       p_delivery_date: delivery_date,
+      p_warehouse: warehouse,
       p_merchandise_subtotal: merchandiseSubtotal,
       p_shipping_subtotal: shippingSubtotal,
       p_discount_subtotal: discountSubtotal,
@@ -129,6 +134,7 @@ export const createPurchase = async (transaction) => {
     }
   };
 };
+
 
 export const deletePurchase = async (po) => {
   const { error } = await supabase

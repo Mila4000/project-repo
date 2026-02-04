@@ -1,8 +1,8 @@
 import * as dashboardService from '../services/dashboardService.js';
 
-export const getOrderTable = async (req, res) => {
+export const getSalesWeightChart = async (req, res) => {
     try {
-        const orders = await dashboardService.getOrderTable();
+        const orders = await dashboardService.getSalesWeightChart();
         res.status(200).json(orders);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch customers' });
@@ -34,5 +34,22 @@ export const getRevenueChartTable= async (req, res) => {
     }
     catch (error) {
         res.status(500).json({ error: 'Failed to fetch customers' });
+    }
+};
+export const getClientSupplierBalanceChart = async (req, res) => {
+    try {
+        const balances = await dashboardService.getClientSupplierBalance();
+        res.status(200).json(balances);
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to fetch customers' });
+    }
+};
+export const getInventoryStatus = async (req, res) => {
+    try {
+        const inventoryStatus = await dashboardService.getInventoryStatus();
+        res.status(200).json(inventoryStatus);
+    }
+    catch (error) {
+        res.status(500).json({ error: 'Failed to fetch inventory status' });
     }
 };
