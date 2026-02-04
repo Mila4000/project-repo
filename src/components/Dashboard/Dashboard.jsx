@@ -22,7 +22,7 @@ function Dashboard() {
   const [inventoryStatusData, setInventoryStatusData] = useState([]);
   const fetchSalesTable = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/dashboard/sales-table');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/sales-table`);
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
       }
@@ -35,7 +35,7 @@ function Dashboard() {
 
   const fetchSalesWeightChart = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/dashboard/sales-weight-chart');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/sales-weight-chart`);
 
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
