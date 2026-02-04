@@ -38,7 +38,7 @@ function StatsGrid() {
   });
   
   useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}api/dashboard/stats`)
+    fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/stats`)
       .then(res => res.json())
       .then(data => setStatsData(data))
       .catch(err => console.error("Failed to fetch stats", err));
