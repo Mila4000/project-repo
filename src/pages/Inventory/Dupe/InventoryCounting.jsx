@@ -215,7 +215,7 @@ function InventoryCounting() {
     // }, [WarehouseData,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
     //  ^^^^^^^^^^^^^
     //  | | | | | | |
-        }, [items,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
+}   , [items,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
     // Use WarehouseData instead of items for FRONTEND MOCKUP. Switch to "items" for BACKEND IMPLEMENTATION.
 
     // --- Pagination Logic ---

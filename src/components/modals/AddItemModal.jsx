@@ -196,8 +196,9 @@ function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
                         value={itemForm.type}
                         disabled
                         className="w-full mt-1 px-3 py-1.5 rounded-md border 
-                        bg-slate-200 dark:bg-slate-600 
+                        bg-slate-200 dark:bg-slate-800 
                         text-slate-700 dark:text-slate-200 
+                        border-slate-300 dark:border-slate-600
                         cursor-not-allowed"
                     />
                     </div>
@@ -246,7 +247,7 @@ function AddItemModal({ isOpen, onClose, onAddItem, loadItemList }) {
                                 onChange={handleItemChange}
                                 disabled
                                 className={`w-full mt-1 px-3 py-1.5 rounded-md border 
-                                bg-slate-200 dark:bg-slate-600 cursor-not-allowed
+                                bg-slate-200 dark:bg-slate-800 cursor-not-allowed dark:text-white text-slate-700 border-slate-300 dark:border-slate-600
                                 `}
                                 required
                                 />

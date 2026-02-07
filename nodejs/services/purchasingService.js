@@ -38,7 +38,6 @@ export const getAllPurchases = async () => {
 
 
 export const createPurchase = async (transaction) => {
-  console.log("Adding Purchase Order:", transaction);
 
   const {
     supplier,

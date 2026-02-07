@@ -21,7 +21,6 @@ export const getAllSales = async () =>{
 }
 
 export const addSales = async (transaction) => {
-  console.log("Adding Sales Invoice:", transaction);
   const {
     customer,
     transaction_date,
