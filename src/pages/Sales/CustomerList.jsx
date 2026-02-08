@@ -188,7 +188,7 @@ function CustomerList() {
 
     const rowLimitOptions = [5, 10, 15];
     const nameOptions = extractUniqueOptions('name', 'Name');
-    const customerTypeOptions = extractUniqueOptions('type', 'Customer Type');
+    const customerTypeOptions = extractUniqueOptions('cus_type', 'Customer Type');
     const statusOptions = extractUniqueOptions('status', 'Status');
 
     const initialRowLimit = rowLimitOptions[0];
@@ -283,13 +283,13 @@ function CustomerList() {
     const filteredOrders = useMemo(() => {
         let filtered = orders;
         if (nameFilter !== initialName && nameFilter !== ALL_OPTION) {
-            filtered = filtered.filter(customer => customer.Name === nameFilter);
+            filtered = filtered.filter(customer => customer.name === nameFilter);
         }
         if (customerTypeFilter !== initialCustomerType && customerTypeFilter !== ALL_OPTION) {
-            filtered = filtered.filter(customer => customer.CustomerType === customerTypeFilter);
+            filtered = filtered.filter(customer => customer.cus_type === customerTypeFilter);
         }
         if (statusFilter !== initialStatus && statusFilter !== ALL_OPTION) {
-            filtered = filtered.filter(customer => customer.Status === statusFilter);
+            filtered = filtered.filter(customer => customer.status === statusFilter);
         }
         return filtered;
     }, [orders, nameFilter, customerTypeFilter, statusFilter, initialName, initialCustomerType, initialStatus]);
