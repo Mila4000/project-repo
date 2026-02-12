@@ -8,9 +8,9 @@ import CustomPaymentStatusSelect from '../../components/filter/CustomPaymentStat
 import CustomApprovalStatusSelect from '../../components/filter/CustomApprovalStatusSelect'; 
 
 function SalesInvoiceTableHeader({
-    dateRangeOptions, supplierOptions, deliveryOptions, paymentOptions, approvalOptions,
-    currentDateRange, currentSupplier, currentDeliveryStatus, currentPaymentStatus, currentApprovalStatus,
-    handleDateRangeChange, handleSupplierChange, handleDeliveryChange, handlePaymentChange, handleApprovalChange,
+    dateRangeOptions, customerOptions, deliveryOptions, paymentOptions, approvalOptions,
+    currentDateRange, currentCustomer, currentDeliveryStatus, currentPaymentStatus, currentApprovalStatus,
+    handleDateRangeChange, handleCustomerChange, handleDeliveryChange, handlePaymentChange, handleApprovalChange,
     iconProps, onAddPurchaseOrderClick
 }) {
     
@@ -31,11 +31,11 @@ function SalesInvoiceTableHeader({
                         iconProps={iconProps}
                     />
                     
-                    {/* 2. Supplier Filter */}
+                    {/* 2. Customer Filter */}
                     <CustomSupplierSelect
-                        options={supplierOptions}
-                        initialValue={currentSupplier}
-                        onSelect={handleSupplierChange}
+                        options={customerOptions}
+                        initialValue={currentCustomer}
+                        onSelect={handleCustomerChange}
                         iconProps={iconProps}
                     />
                     <CustomApprovalStatusSelect

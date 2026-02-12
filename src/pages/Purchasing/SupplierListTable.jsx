@@ -1,9 +1,10 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react'; 
 
-function SupplierListTable({ orders, onEdit }) {
-    const getStatusColor = (Status) => {
-        switch (Status) {
+function SupplierListTable({ suppliers, onEdit, onDelete }) {
+    
+    const getStatusColor = (status) => {
+        switch (status) {
             case "Active":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Inactive":
@@ -29,59 +30,67 @@ function SupplierListTable({ orders, onEdit }) {
                     </tr>
                 </thead>
                 <tbody>
-                    {orders.map((order) => (
-                        <tr key={order.Name} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                            <td className="p-4">
+                    {suppliers.length > 0 ? (
+                    suppliers.map((supplier,index) => {
+                        return(
+                        <tr key={supplier.name} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                            <td className="p-4" key={index}>
                                 <span className="text-sm font-medium text-blue-500">
-                                    {order.Name}
+                                    {supplier.name}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.businessName}
+                                    {supplier.businessname}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.Email}
+                                    {supplier.email}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.ContactNo}
+                                    {supplier.contactno}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.tinNo}
+                                    {supplier.tinno}
                                 </span>
                             </td>
                             <td className="w-52 p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.BankAcc}
+                                    {supplier.bankaccount}
                                 </span>
                             </td>
                             <td className="w-40 p-4 text-left">
-                                <span className={`font-medium text-xs px-3 py-1 rounded-full ${getStatusColor(order.Status)}`}>
-                                    {order.Status}
+                                <span className={`font-medium text-xs px-3 py-1 rounded-full ${getStatusColor(supplier.status)}`}>
+                                    {supplier.status}
                                 </span>
                             </td>
                             <td className="p-4 flex items-center gap-3"> 
-                                <button 
-                                    className="text-sm text-blue-800 dark:text-blue-400 hover:scale-110 transition-transform"
-                                    onClick={() => onEdit(order)}
+                                <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
+                                    onClick={() => onEdit(supplier)}
                                 >
-                                    <Pencil className="w-4 h-4"/>
-                                </button>
-                                <button 
-                                    className="text-sm text-red-800 dark:text-red-400 hover:scale-110 transition-transform"
-                                    title="Delete Supplier"
+                                <Pencil className="w-4 h-4"/>
+                                </span>
+                                <span
+                                className="text-sm text-red-800 dark:text-red-400 cursor-pointer hover:scale-110 transition"
+                                onClick={() => onDelete(supplier.id)}
                                 >
-                                    <Trash2 className="w-4 h-4"/>
-                                </button>
+                                <Trash2 className="w-4 h-4" />
+                                </span>
                             </td>
                         </tr>
-                    ))}
+                    );
+                    })) : (
+                        <tr>
+                            <td colSpan="8" className="p-4 text-center text-sm text-slate-600 dark:text-slate-300">
+                                No suppliers found.
+                            </td>
+                        </tr>
+                    )}
                 </tbody>
             </table>
         </div>

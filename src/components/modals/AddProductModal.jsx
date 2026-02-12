@@ -4,14 +4,14 @@ import CustomFormSelect from '../filter/CustomFormSelect';
 import AddSupplierPriceModal from './AddSupplierPriceModal'; 
 import EditSupplierModal from './EditSupplierModal'; 
 
-const warehouseData = [{ warehouse: 'Saog' }, { warehouse: 'Meycuayan' }, { warehouse: 'Quezon City' }];
+const warehouseData = [{ warehouse_id:1,warehouse: 'Pata Storage' }, { warehouse_id:2,warehouse: 'Saog' }, { warehouse_id:3,warehouse: 'Kalakal' }];
 
 function AddProductModal({ isOpen, onClose, supplierOptions }) {
     const [formValues, setFormValues] = useState({
-        itemName: '',
-        thresholdCount: '',
-        srp: '',
-        warehouse: null,
+        name: '',
+        threshold_count: '',
+        price: '',
+        warehouse_id: null,
         remarks: '',
     });
 
@@ -23,10 +23,21 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
 
     if (!isOpen) return null;
 
-    const handleInputChange = (value, name) => {
-        setFormValues(prev => ({ ...prev, [name]: value }));
+    const handleInputChange = (e) => {
+        const { name, value } = e.target;
+        setFormValues(prev => ({
+            ...prev,
+            [name]: value
+        }));
     };
 
+
+      const handleCustomForm = (value, name) => {
+        setFormValues((prev) => ({
+        ...prev,
+        [name]: value,
+        }));
+    };
     // --- TOGGLE MODAL HELPERS ---
     const handleOpenPriceModal = () => setIsPriceModalOpen(true);
     const handleClosePriceModal = () => setIsPriceModalOpen(false);
@@ -55,13 +66,31 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
         setSupplierPrices(prev => prev.filter(item => item.id !== id));
     };
     
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async(e) => {
         e.preventDefault();
-        console.log("Final Data:", { ...formValues, pricing: supplierPrices });
+        const newStocks={
+            ...formValues,pricing: supplierPrices 
+        }
+        try {
+            const res = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/stock`,
+                {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newStocks),
+                }
+            )
+            if (!res.ok) {
+            const errText = await res.text();
+            throw new Error(errText);
+            }
+        } catch (error) {
+            console.error("Failed to save received items", error);
+        }
         onClose();
     };
 
-    const warehouseOptions = warehouseData.map(d => ({ value: d.warehouse, label: d.warehouse }));
+    const warehouseOptions = warehouseData.map(d => ({ value: d.warehouse_id, label: d.warehouse }));
 
     return (
         <>
@@ -81,23 +110,48 @@ function AddProductModal({ isOpen, onClose, supplierOptions }) {
                             <div className="space-y-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Item Name</label>
-                                    <input type="text" className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500" />
+                                    <input type="text" 
+                                    id="name"
+                                    name="name"
+                                    value={formValues.name}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter item name"
+                                    className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500"
+                                    />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Threshold Count</label>
-                                    <input type="number" className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500" />
+                                    <input type="number"
+                                    id="threshold_count"
+                                    name="threshold_count"
+                                    value={formValues.threshold_count}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter threshold count"
+                                    className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Suggested Retail Price (SRP)</label>
-                                    <input type="number" className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500" />
+                                    <input type="number" 
+                                    id="price"
+                                    name="price"
+                                    value={formValues.price}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter price"
+                                    className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 outline-none focus:border-blue-500" />
                                 </div>
                             </div>
 
                             <div className="space-y-3">
-                                <CustomFormSelect label="Warehouse" name="warehouse" options={warehouseOptions} initialValue={formValues.warehouse} onSelect={handleInputChange} />
+                                <CustomFormSelect 
+                                    label="Warehouse"
+                                    name="warehouse_id"
+                                    options={warehouseOptions}
+                                    initialValue={formValues.warehouse_id}
+                                    onSelect={handleCustomForm}
+                                />
                                 <div className="space-y-2">
                                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Remarks</label>
-                                    <textarea name="remarks" rows="4" value={formValues.remarks} onChange={(e) => handleInputChange(e.target.value, e.target.name)} className="mt-1 p-2 block w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 resize-none outline-none focus:border-blue-500" />
+                                    <textarea name="remarks" rows="4" value={formValues.remarks} onChange={(e) => handleCustomForm(e.target.value, e.target.name)} className="mt-1 p-2 block w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 resize-none outline-none focus:border-blue-500" />
                                 </div>
                             </div>
                         </div>

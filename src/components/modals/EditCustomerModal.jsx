@@ -13,24 +13,33 @@ const statusOptions = [
     { label: 'Inactive', value: 'Inactive' }
 ];
 
-function EditCustomerModal({ isOpen, onClose, supplierData, onSave }) {
-    const [formData, setFormData] = useState({});
-
+function EditCustomerModal({ isOpen, onClose, customerData, onSave }) {
+    const [formData, setFormData] = useState({
+        name: '',
+        business_name: '',
+        address: '',
+        email: '',
+        contactno: '',
+        facebook_name: '',
+        cus_type: '',
+        status:'',
+        bankaccount:''
+    });
+    
     // Sync state when supplierData changes
     useEffect(() => {
-        if (supplierData) {
-            setFormData(supplierData);
+        if (customerData) {
+            setFormData(customerData);
         } else {
             setFormData({});
         }
-    }, [supplierData]);
+    }, [customerData]);
 
     if (!isOpen) return null;
 
     // Smart handler: works for both standard inputs and Custom Selects
     const handleInputChange = (input) => {
         let name, value;
-
         if (input.target) {
             // Logic for standard <input> (e.target)
             name = input.target.name;
@@ -51,7 +60,6 @@ function EditCustomerModal({ isOpen, onClose, supplierData, onSave }) {
         e.preventDefault();
         onSave(formData);
     };
-
     return (
         <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-[60] flex items-center justify-center">
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow-2xl w-full max-w-2xl mx-4" onClick={e => e.stopPropagation()}>
@@ -69,41 +77,41 @@ function EditCustomerModal({ isOpen, onClose, supplierData, onSave }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
-                            <input name="Name" value={formData.Name || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <input name="name" value={formData.name} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">FB Name</label>
-                            <input name="FBName" value={formData.FBName || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <input name="facebook_name" value={formData.facebook_name} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Business Name</label>
-                            <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <input name="business_name" value={formData.business_name} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email Address</label>
-                            <input name="EmailAddress" value={formData.Email || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <input name="email" value={formData.email} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact No.</label>
-                            <input name="ContactNo" value={formData.ContactNo || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <input name="contactno" value={formData.contactno} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         
                         <div className="space-y-1">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Bank Account No.</label>
-                            <input name="BankAcc" value={formData.BankAcc || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <input name="bankaccount" value={formData.bankaccount} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className = "mt-1">
                             <ModalCustomFormSelect
                                 label="Customer Type"
-                                name="customerType"
+                                name="cus_type"
                                 options={customerType}
-                                currentValue={formData.CustomerType}
+                                currentValue={formData.cus_type}
                                 onSelect={handleInputChange}
                             />
                         </div>
@@ -111,9 +119,9 @@ function EditCustomerModal({ isOpen, onClose, supplierData, onSave }) {
                         <div className = "mt-1">
                             <ModalCustomFormSelect
                                 label="Status"
-                                name="Status"
+                                name="status"
                                 options={statusOptions}
-                                currentValue={formData.Status}
+                                currentValue={formData.status}
                                 onSelect={handleInputChange}
                             />
                         </div>
@@ -123,7 +131,7 @@ function EditCustomerModal({ isOpen, onClose, supplierData, onSave }) {
 
                     <div className = "mt-5">
                         <label htmlFor="Address" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Address</label>
-                            <input type = "text" id="Address" name="Address" rows="2" value={formData.Address} onChange={handleInputChange} placeholder="123 Main Street, Quezon City"
+                            <input type= "text" id="Address" name="Address" rows="2" value={formData.address} onChange={handleInputChange} placeholder="123 Main Street, Quezon City"
                             className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                     </div>
 

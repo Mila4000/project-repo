@@ -1,11 +1,9 @@
-import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react'; 
+import React ,{useEffect }from 'react';
+import { Trash2, ReceiptText, Eye} from 'lucide-react'; 
 
-function PurchasedOrdersTable({ orders, onEdit }) {
-    // NOTE: The static PurchasedOrders data is removed and now received via the 'orders' prop.
-    
-    const getApprovalStatusColor = (approvalStatus) => {
-        switch (approvalStatus) {
+function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onView}) {
+    const getApprovalStatusColor = (approval_status) => {
+        switch (approval_status) {
             case "Approved":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Pending":
@@ -16,9 +14,9 @@ function PurchasedOrdersTable({ orders, onEdit }) {
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
         }
     };
-    
-    const getDeliveryStatusColor = (deliveryStatus) => {
-        switch (deliveryStatus) {
+
+    const getDeliveryStatusColor = (delivery_status) => {
+        switch (delivery_status) {
             case "Delivered":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Out for Delivery":
@@ -30,18 +28,21 @@ function PurchasedOrdersTable({ orders, onEdit }) {
         }
     };
 
-    const getPaymentStatusColor = (paymentStatus) => {
-        switch (paymentStatus) {
+    const getPaymentStatusColor = (payment_status) => {
+        switch (payment_status) {
             case "Paid":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Unpaid":
                 return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-            case "N/A":
+            case "Partially Paid":
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
             default:
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
         }
     };
+    const getSupplierById = (id) => {
+        return suppliers.find(supplier => supplier.id === id);
+    }
 
     return (
         <div className="overflow-x-auto pb-6 mt-4">
@@ -51,71 +52,152 @@ function PurchasedOrdersTable({ orders, onEdit }) {
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">PO No.</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Supplier</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Transaction Date</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Date</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total(in ₱)</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Approval Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Payment Status</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Remarks</th> 
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Quantity</th> 
+                    <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 ">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => {
+                  {orders.length > 0 ? (
+                  orders.map((order, index) => {
+                    const getDeliveryStatusDisplay = (order) => {
+                    // If rejected or already delivered → normal label
+                    if (
+                      order.approval_status === "Rejected" ||
+                      order.delivery_status === "Delivered" ||
+                      !order.delivery_date
+                    ) {
+                      return {
+                        label: order.delivery_status,
+                        className: getDeliveryStatusColor(order.delivery_status),
+                      };
+                    }
+
+                    const today = new Date();
+                    const deliveryDate = new Date(order.delivery_date);
+
+                    // Not overdue yet
+                    if (today <= deliveryDate) {
+                      return {
+                        label: order.delivery_status,
+                        className: getDeliveryStatusColor(order.delivery_status),
+                      };
+                    }
+                  const diffTime = today - deliveryDate;
+
+                  const totalHours = Math.floor(diffTime / (1000 * 60 * 60));
+                  const overdueDays = Math.floor(totalHours / 24);
+
+                  let label;
+
+                  if (totalHours < 1) {
+                    label = "Overdue (< 1 hour)";
+                  } else if (totalHours < 24) {
+                    label = `Overdue (${totalHours} hour${totalHours > 1 ? "s" : ""})`;
+                  } else {
+                    label = `Overdue (${overdueDays} day${overdueDays > 1 ? "s" : ""})`;
+                  }
+
+                  return {
+                    label,
+                    className:
+                      "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
+                  };
+                  };
                     return (
-                      <tr key={order.PO} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                      <tr key={order.po} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                         <td className="p-4" key={index}>
                           <span className="text-sm font-medium text-blue-500">
-                            {order.PO}
+                            {order.po}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.supplier}
+                            {getSupplierById(order.supplier_id)?.businessname ?? "—"}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.transactionDate}
+                            {order.transaction_date}
                           </span>
                         </td>
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.total} 
+                            {order.delivery_date}
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getApprovalStatusColor(order.approvalStatus)}`}> 
-                            {order.approvalStatus}
+                          <span className="text-sm text-slate-800 dark:text-white">
+                            ₱{Number(order.total).toFixed(2)} 
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(order.deliveryStatus)}`}>
-                            {order.deliveryStatus}
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getApprovalStatusColor(order.approval_status)}`}> 
+                            {order.approval_status}
                           </span>
                         </td>
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
-                            {order.paymentStatus}
+                          {(() => {
+                            const status = getDeliveryStatusDisplay(order);
+                            return (
+                              <span
+                                className={`font-medium text-xs px-3 py-1 rounded-full ${status.className}`}
+                              >
+                                {status.label}
+                              </span>
+                            );
+                          })()}
+                        </td>
+                        <td className="p-4">
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(order.payment_status)}`}>
+                            {order.payment_status}
                           </span>
                         </td>
                         <td className="p-4"> 
                             <span className="text-sm text-slate-800 dark:text-white">
-                                {order.remarks}
+                                {order.total_quantity} kg
                             </span>
                         </td>
-                        <td className="p-4 flex items-center gap-3"> 
-                          <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
-                            onClick={() => onEdit(order)}
+                        <td className="p-4 flex items-center justify-center gap-3">
+                        {/* View */}
+                        <span
+                          className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
+                          onClick={() => onView(order)}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </span>
+
+                        {/* View Receipt – only if NOT Rejected */}
+                        {order.approval_status !== "Rejected" && (
+                          <span
+                            className="text-sm text-blue-900 dark:text-blue-500 cursor-pointer"
+                            onClick={() => onViewReceipt(order)}
                           >
-                            <Pencil className="w-4 h-4"/>
+                            <ReceiptText className="w-5 h-5" />
                           </span>
-                          <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer">
-                            <Trash2 className="w-4 h-4"/>
-                          </span>
-                        </td>
+                        )}
+
+                        {/* Delete */}
+                        <span
+                          className="text-sm text-red-800 dark:text-red-400 cursor-pointer hover:scale-110 transition"
+                          onClick={() => onDelete(order.po)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </span>
+                      </td>
                       </tr>
                     );
-                  })}
+                  })) : (
+                    <tr>
+                      <td colSpan="9" className="p-4 text-center text-sm text-slate-600 dark:text-slate-300">
+                        No purchased orders found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
             </table>
         </div>

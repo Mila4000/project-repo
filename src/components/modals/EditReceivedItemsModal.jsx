@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import ModalCustomFormSelect from '../../components/filter/ModalCustomFormSelect'; 
+/* import ModalCustomFormSelect from '../../components/filter/ModalCustomFormSelect'; 
 
 
 const deliveryStatusOptions = [
     { label: 'Delivered', value: 'Delivered' },
     { label: 'Out for Delivery', value: 'Out for Delivery' },
     { label: 'Order Placed', value: 'Order Placed' }
-];
+]; */
 
 function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
     const [formData, setFormData] = useState({});
-
     useEffect(() => {
         if (itemData) setFormData(itemData);
     }, [itemData]);
@@ -26,7 +25,6 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
             name = input.target.name;
             value = input.target.value;
         } else {
-            // Logic for ModalCustomFormSelect (passed as { name, value })
             name = input.name;
             value = input.value;
         }
@@ -36,10 +34,16 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
             [name]: value
         }));
     };
-
     const handleSubmit = (e) => {
-        e.preventDefault();
-        onSave(formData);
+    e.preventDefault();
+    const payload = {
+        id: formData.id,
+        product_name: formData.product_name,
+        quantity: Number(formData.quantity),
+        expected_quantity: Number(formData.expected_quantity),
+    };
+
+    onSave(payload);
     };
 
     return (
@@ -54,59 +58,161 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
                 </div>
 
                 <form onSubmit={handleSubmit}>
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-                    <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">PO Number</label>
-                            <input name="Name" value={formData.PO || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/50 shadow-xs text-slate-500 dark:text-slate-400" readOnly disabled/>
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Item Name</label>
-                            <input name="Name" value={formData.itemName || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Supplier</label>
-                            <input name="Name" value={formData.supplier || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
-                            <input name="Name" value={formData.transactionDate || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
-                        
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Expected Quantity</label>
-                            <input name="Name" value={formData.expectedQuantity || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Actual Quantity</label>
-                            <input name="Name" value={formData.actualQuantity || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Total Kilo</label>
-                            <input name="Name" value={formData.totalKilo || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200" />
-                        </div>
-
-                        <div className = "mt-1">
-                            <ModalCustomFormSelect
-                                label="Delivery Status"
-                                name="deliveryStatus"
-                                options={deliveryStatusOptions}
-                                currentValue={formData.deliveryStatus}
-                                onSelect={handleInputChange}
-                            />
-                        </div>
-
-                        <div className="md:col-span-2 space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Remarks</label>
-                            <textarea name="remarks" rows="3" value={formData.remarks || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200 resize-none" />
-                        </div>
+                    {/* PO Number */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        PO Number
+                    </label>
+                    <input
+                        name="purchased_order_id"
+                        value={formData.po_number || ''}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                        readOnly
+                        disabled
+                    />
                     </div>
 
-                    <div className="p-6 flex justify-end gap-3">
-                        <button onClick={onClose} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:underline">Cancel</button>
-                        <button onClick={() => onSave(formData)} className="px-4 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow-lg shadow-blue-500/30">Update Item</button>
+                    {/* Item Name */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Item Name
+                    </label>
+                    <input
+                        name="product_name"
+                        value={formData.product_name || ''}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                                readOnly
+                                disabled
+                    />
                     </div>
+
+                    {/* Supplier */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Supplier
+                    </label>
+                    <input
+                        name="supplier"
+                        value={formData.supplier || ''}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                        readOnly
+                        disabled
+                    />
+                    </div>
+
+                    {/* Transaction Date */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Transaction Date
+                    </label>
+                    <input
+                        name="transaction_date"
+                        value={formData.transaction_date || ''}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                        readOnly
+                        disabled
+                    />
+                    </div>
+
+                    {/* Expected Quantity */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Expected Quantity
+                    </label>
+                    <input
+                        name="expected_quantity"
+                        value={formData.expected_quantity}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                        readOnly
+                        disabled
+                    />
+                    </div>
+
+                    {/* Actual Quantity */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Actual Quantity
+                    </label>
+                    <input
+                        name="quantity"
+                        type="number"
+                        min="0"
+                        value={formData.quantity}
+                        onChange={handleInputChange}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200
+                                focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                    />
+                    </div>
+
+                    {/* Delivery Status */}
+                    <div className="space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Delivery Status
+                    </label>
+                    <input
+                        name="delivery_status"
+                        value={formData.delivery_status || ''}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                cursor-not-allowed"
+                        readOnly
+                        disabled
+                    />
+                    </div>
+
+                    {/* Remarks */}
+                    <div className="md:col-span-2 space-y-1">
+                    <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Remarks
+                    </label>
+                    <textarea
+                        name="remarks"
+                        rows={3}
+                        value={formData.remarks || ''}
+                        className="w-full px-3 py-2 rounded-md border border-slate-300 dark:border-slate-600
+                                bg-slate-100 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400
+                                resize-none cursor-not-allowed"
+                        readOnly
+                        disabled
+                    />
+                    </div>
+                </div>
+
+                {/* Actions */}
+                <div className="p-6 flex justify-end gap-3 border-t border-slate-200 dark:border-slate-700">
+                    <button
+                    type="button"
+                    onClick={onClose}
+                    className="px-4 py-2 text-sm text-slate-600 dark:text-slate-400 hover:underline"
+                    >
+                    Cancel
+                    </button>
+
+                    <button
+                    type="submit"
+                    onClick={() => onSave(formData)}
+                    className="px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700
+                                text-white rounded-lg shadow-md shadow-blue-500/30"
+                    >
+                    Update Item
+                    </button>
+                </div>
                 </form>
+
             </div>
         </div>
     );

@@ -1,19 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, act } from 'react';
 import { Plus, Trash2, X, Minus } from 'lucide-react'; 
 import CustomFormSelect from '../filter/CustomFormSelect'; 
 import AddItemQuantityModal from './AddItemQuantityModal'; // Renamed modal
 
 // --- DUMMY DATA ---
-const SupplierData = [
+/* const SupplierData = [
     { supplier: 'Earl Meats Inc.' },
     { supplier: 'Javier Meats' },
     { supplier: 'Betez Trading' }
-];
+]; */
 
 const ReceivedItemsData = [
     {
         POnumber: 'PO-123456',
-        TransactionDate: 'Sep 21, 2025',
+        transaction_date: 'Sep 21, 2025',
         SupplierName: 'Earl Meats Inc.',
         ContactNumber: '09123456789',
         Items: [
@@ -23,7 +23,7 @@ const ReceivedItemsData = [
     },
     {
         POnumber: 'PO-135790',
-        TransactionDate: 'Sep 20, 2025',
+        transaction_date: 'Sep 20, 2025',
         SupplierName: 'Javier Meats',
         ContactNumber: '09123456789',
         Items: [
@@ -32,7 +32,7 @@ const ReceivedItemsData = [
     },
     {
         POnumber: 'PO-24681',
-        TransactionDate: 'Sep 19, 2025',
+        transaction_date: 'Sep 19, 2025',
         SupplierName: 'Betez Trading',
         ContactNumber: '09989012345',
         Items: [
@@ -68,154 +68,225 @@ const clampQuantity = (value, min, max) => {
 };
 
 
-function AddReceivedItemsModal({ isOpen, onClose }) {
-    if (!isOpen) return null;
+function AddReceivedItemsModal({ isOpen, onClose,  onAddItem }) {
 
-    // --- STATE MANAGEMENT ---
+
+    /* =========================
+        STATE MANAGEMENT
+    ========================= */
     const [formValues, setFormValues] = useState({
-        POnumber: '',
-        TransactionDate: '',
-        SupplierName: '', 
-        ContactNumber: '', 
+    POnumber: '',
+    transaction_date: '',
+    SupplierName: '',
+    ContactNumber: '',
     });
-    
-    const [receivedItems, setReceivedItems] = useState([]);
 
+    const [receivedOrders, setReceivedOrders] = useState([]);   // ALL fetched items
+    const [lineItems, setLineItems] = useState([]);             // Selected PO items
+    const [newItem, setNewItem] = useState([]);                 // Manually added items
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-    
-    const handleOpenItemModal = () => setIsItemModalOpen(true);
+
+
+    /* =========================
+    MODAL HANDLERS
+    ========================= */
+    const handleOpenItemModal  = () => setIsItemModalOpen(true);
     const handleCloseItemModal = () => setIsItemModalOpen(false);
 
 
-    // --- Core Logic: PO Number Selection & Auto-fill ---
+    /* =========================
+    DATA FETCHING
+    ========================= */
+    const fetchItems = async () => {
+    try {
+        const res  = await fetch(`${import.meta.env.VITE_API_URL}/api/received-items`);
+        const data = await res.json();
 
-    const handlePOSelect = (poNumber) => {
-        const poData = ReceivedItemsData.find(d => d.POnumber === poNumber);
+        const normalized = data.map(item => ({
+        id: item.id,
+        purchased_order_id: item.purchased_order_id,
+        unit_price: item.unit_price,
 
-        if (poData) {
-            setFormValues(prev => ({
-                ...prev,
-                POnumber: poNumber,
-                TransactionDate: poData.TransactionDate,
-                SupplierName: poData.SupplierName,
-                ContactNumber: poData.ContactNumber,
-            }));
+        po_number: item.purchased_order.po,
+        product_name: item.product_name,
 
-            const initialItems = poData.Items.map(item => ({
-                id: generateId(),
-                ItemName: item.ItemName,
-                ExpectedQuantity: parseFloat(item.ExpectedQuantity) || 0,
-                ActualQuantity: '',
-            }));
-            setReceivedItems(initialItems);
-        } else {
-             setFormValues(prev => ({
-                ...prev,
-                POnumber: poNumber,
-                TransactionDate: '',
-                SupplierName: '',
-                ContactNumber: '',
-            }));
-            setReceivedItems([]);
-        }
-    };
+        expected_quantity: item.expected_quantity ?? 0,
+        quantity: item.quantity ?? '',
 
-
-    // --- ITEM HANDLERS ---
-    
-    const handleManualAddItem = (newItem) => {
-        const itemWithId = {
-            ...newItem,
-            id: generateId(),
-            ExpectedQuantity: parseFloat(newItem.ExpectedQuantity) || '', 
-            ActualQuantity: parseFloat(newItem.ActualQuantity) || '',
-        };
-        setReceivedItems(prev => [...prev, itemWithId]);
-        handleCloseItemModal();
-    };
-
-
-    // Handler for updating Actual Quantity directly in the table (Manual Input/Typing)
-    const handleActualQuantityChange = (id, value) => {
-        // This handler updates the state as the user types
-        setReceivedItems(prev => prev.map(item => 
-            item.id === id ? { ...item, ActualQuantity: value } : item
-        ));
-    };
-
-    // Handler to apply validation when the user leaves the input field (onBlur)
-    const handleQuantityBlur = (id, value) => {
-        const min = 1; 
-        const max = 999;
-        
-        // Clamp the final input value
-        const validatedValue = clampQuantity(value, min, max);
-
-        setReceivedItems(prev => prev.map(item => 
-            item.id === id ? { ...item, ActualQuantity: validatedValue } : item
-        ));
-    };
-
-
-    // Handler for increment/decrement button clicks
-    const handleQuantityButtonClick = (itemId, currentQuantity, direction) => {
-        const min = 1;
-        const max = 999;
-        const step = 1;
-        
-        // Use the clamped value of the current quantity for calculation base
-        let baseQuantity = clampQuantity(currentQuantity, min, max);
-
-        // Apply the change
-        let newQuantity = baseQuantity + (direction * step);
-
-        // Re-clamp the final value
-        const finalQuantity = clampQuantity(newQuantity, min, max);
-
-        // Update the state
-        setReceivedItems(prev => prev.map(item => 
-            item.id === itemId ? { ...item, ActualQuantity: finalQuantity } : item
-        ));
-    };
-
-    // Handler to remove an item from the table
-    const handleRemoveItem = (id) => {
-        setReceivedItems(prev => prev.filter(item => item.id !== id));
-    };
-    
-    // --- END ITEM HANDLERS ---
-
-
-    // Universal Form Input Change Handler
-    const handleInputChange = (value, name) => {
-        if (name === 'POnumber') {
-            handlePOSelect(value);
-        }
-        
-        setFormValues(prev => ({
-            ...prev,
-            [name]: value
+        SupplierName: item.purchased_order.supplier.businessname,
+        ContactNumber: item.purchased_order.supplier.contactno,
+        transaction_date: item.purchased_order.transaction_date,
         }));
+
+        setReceivedOrders(normalized);
+    } catch (err) {
+        console.error("Failed to fetch received items", err);
+    }
+    };
+
+    useEffect(() => {
+    fetchItems();
+    }, []);
+
+
+    /* =========================
+    PO SELECTION & AUTO-FILL
+    ========================= */
+    const handlePOSelect = (poNumber) => {
+    const poItems = receivedOrders.filter(
+        item => item.po_number === poNumber
+    );
+
+    if (!poItems.length) return;
+
+    const first = poItems[0];
+
+    setFormValues({
+        POnumber: poNumber,
+        transaction_date: first.transaction_date,
+        SupplierName: first.SupplierName,
+        ContactNumber: first.ContactNumber,
+    });
+
+    setLineItems(
+        poItems.map(item => ({
+        id: item.id,
+        purchased_order_id: item.purchased_order_id,
+        unit_price: item.unit_price,
+        product_name: item.product_name,
+        expected_quantity: item.expected_quantity,
+        quantity: item.quantity,
+        }))
+    );
     };
 
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        
-        if (!formValues.POnumber) {
-            alert("Please select a valid PO Number.");
-            return;
+    /* =========================
+    ITEM HANDLERS
+    ========================= */
+    const handleManualAddItem = (item) => {
+    const formattedItem = {
+        ...item,
+        expected_quantity: Number(item.expected_quantity) || 0,
+        quantity: Number(item.quantity) || 0,
+        unit_price: Number(item.unit_price) || 0,
+    };
+
+    setNewItem(prev => [...prev, formattedItem]);
+    handleCloseItemModal();
+    };
+
+    // Update quantity while typing (existing items)
+    const handleActualQuantityChange = (id, value) => {
+    setLineItems(prev =>
+        prev.map(item =>
+        item.id === id ? { ...item, quantity: value } : item
+        )
+    );
+    };
+
+    // Update quantity for newly added items
+    const handleNewItemQuantityChange = (index, value) => {
+    setNewItem(prev =>
+        prev.map((item, i) =>
+        i === index ? { ...item, quantity: value } : item
+        )
+    );
+    };
+
+    // Validate quantity on blur
+    const handleQuantityBlur = (id, value) => {
+    const validated = clampQuantity(value, 1, 999);
+
+    setLineItems(prev =>
+        prev.map(item =>
+        item.id === id ? { ...item, quantity: validated } : item
+        )
+    );
+    };
+
+    // Increment / Decrement buttons
+    const handleQuantityButtonClick = (id, current, direction) => {
+    const base  = clampQuantity(current, 1, 999);
+    const next  = clampQuantity(base + direction, 1, 999);
+
+    setLineItems(prev =>
+        prev.map(item =>
+        item.id === id ? { ...item, quantity: next } : item
+        )
+    );
+    };
+
+    // Remove item from table
+    const handleRemoveItem = (id) => {
+    setLineItems(prev => prev.filter(item => item.id !== id));
+    };
+
+
+    /* =========================
+    FORM HANDLERS
+    ========================= */
+    const handleInputChange = (value, name) => {
+    if (name === 'POnumber') {
+        handlePOSelect(value);
+    }
+
+    setFormValues(prev => ({
+        ...prev,
+        [name]: value,
+    }));
+    };
+
+
+    /* =========================
+    SUBMIT HANDLER
+    ========================= */
+    const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const payload = {
+        ...formValues,
+        items: lineItems,
+        newItem,
+    };
+
+
+    try {
+        const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/received-items`,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        }
+        );
+
+        if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(errText);
         }
 
-        console.log("New Received Item Data:", { ...formValues, receivedItems });
-        
-        setFormValues({ POnumber: '', TransactionDate: '', SupplierName: '', ContactNumber: '' });
-        setReceivedItems([]); 
+        const savedData = await response.json();
+        onAddItem(savedData);
         onClose();
+    } catch (err) {
+        console.error("Failed to save received items", err);
+    }
     };
 
 
-    const poOptions = ReceivedItemsData.map(d => ({ value: d.POnumber, label: d.POnumber }));
+    /* =========================
+    DERIVED VALUES
+    ========================= */
+    if (!isOpen) return null;
+
+    const poOptions = [
+    ...new Set(receivedOrders.map(o => o.po_number))
+    ].map(po => ({
+    value: po,
+    label: po,
+    }));
+
 
 
     return (
@@ -250,8 +321,8 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
 
                             {/* Transaction Date (Autofilled) */}
                             <div>
-                                <label htmlFor="TransactionDate" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
-                                <input type="text" id="TransactionDate" name="TransactionDate" value={formValues.TransactionDate} 
+                                <label htmlFor="transaction_date" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Transaction Date</label>
+                                <input type="text" id="transaction_date" name="transaction_date" value={formValues.transaction_date} 
                                     readOnly 
                                     className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700/70 shadow-xs text-slate-700 dark:text-slate-200 cursor-not-allowed" 
                                     required 
@@ -283,13 +354,6 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
                             <div className="flex items-center justify-between mb-3">
                                 <h1 className="text-[#535353] dark:text-white text-xl font-bold">Product Details</h1>
 
-                                <button
-                                    type="button"
-                                    onClick={handleOpenItemModal}
-                                    className="flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg cursor-pointer hover:shadow-lg transition-all">
-                                    <Plus className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Add Item</span>
-                                </button>
                             </div>
                             <table className="w-full">
                                 <thead>
@@ -297,80 +361,41 @@ function AddReceivedItemsModal({ isOpen, onClose }) {
                                         <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Item Name</th>
                                         <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Expected Quantity</th>
                                         <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actual Quantity</th>
-                                        <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {/* DYNAMIC ROWS MAPPING OVER receivedItems */}
-                                    {receivedItems.length > 0 ? (
-                                        receivedItems.map((item) => (
-                                            <tr 
-                                                key={item.id} 
-                                                className = "border-b border-slate-300 dark:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
-                                            >
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.ItemName}</td>
-                                                <td className="p-4 text-sm text-center text-slate-700 dark:text-slate-200">{item.ExpectedQuantity}</td>
-                                                <td className="p-3 text-center text-sm text-slate-700 dark:text-slate-200 w-[150px]">
-                                                    {/* <div className="relative flex items-center max-w-[8rem] border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 rounded-md mx-auto">
-                                                        
-                                                        <button 
-                                                            type="button" 
-                                                            id="decrement-button" 
-                                                            onClick={() => handleQuantityButtonClick(item.id, item.ActualQuantity, -1)}
-                                                            className="hover:bg-slate-100/50 dark:hover:bg-slate-500/30 rounded-l-md cursor-pointer border-r border-slate-300 dark:border-slate-600 box-border font-medium text-slate-800 dark:text-slate-300 leading-5 rounded-s-base text-sm px-3 focus:outline-none h-10"
-                                                        >
-                                                            <Minus className="w-4 h-4" />
-                                                        </button>
-                                                        <input 
-                                                            type="text" 
-                                                            id={`quantity-input-${item.id}`}
-                                                            step="1" 
-                                                            data-input-counter-min="1" 
-                                                            data-input-counter-max="999" 
-                                                            value={item.ActualQuantity} 
-                                                            onChange={(e) => handleActualQuantityChange(item.id, e.target.value)} 
-                                                            onBlur={(e) => handleQuantityBlur(item.id, e.target.value)}
-                                                            className=" border-x-0 h-10 text-center w-full py-2.5 text-slate-800 dark:text-slate-300 focus:outline-none" 
-                                                            required
-                                                        />
-                                                        
-                                                        <button 
-                                                            type="button" 
-                                                            id="increment-button" 
-                                                            onClick={() => handleQuantityButtonClick(item.id, item.ActualQuantity, 1)}
-                                                            className="hover:bg-slate-100/50 dark:hover:bg-slate-500/30 rounded-r-md cursor-pointer border-l border-slate-300 dark:border-slate-600 box-border font-medium text-slate-800 dark:text-slate-300 leading-5 rounded-s-base text-sm px-3 focus:outline-none h-10"
-                                                        >
-                                                            <Plus className="w-4 h-4"/>
-                                                        </button>
-                                                    </div> */}
+                                    {/* PO ITEMS */}
+                                    {lineItems.map(item => (
+                                        <tr key={`po-${item.id}`}>
+                                        <td className="p-4">{item.product_name}</td>
 
-                                                    <input 
-                                                        type="number"
-                                                        step="0.01"
-                                                        min="0"
-                                                        value={item.ActualQuantity}
-                                                        onChange={(e) => handleActualQuantityChange(item.id, e.target.value)}
-                                                        className="w-full px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-center"
-                                                        required
-                                                    />
-                                                </td>
-                                                <td className="p-4 text-center">
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => handleRemoveItem(item.id)}
-                                                        className="text-red-500 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
-                                                        aria-label={`Remove item ${item.ItemName}`}
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))
-                                    ) : (
-                                        <tr className="border-b border-slate-200/50 dark:border-slate-700/50">
-                                            <td colSpan="4" className="p-4 text-center text-sm text-slate-500 dark:text-slate-400 italic">
-                                                Select a PO Number to load items, or click "Add Item" to add manually.
-                                            </td>
+                                        <td className="p-4 text-center">
+                                            {item.expected_quantity}
+                                        </td>
+
+                                        <td className="p-3 text-center">
+                                            <input
+                                            type="number"
+                                            min="0"
+                                            value={item.quantity}
+                                            onChange={e =>
+                                                handleActualQuantityChange(item.id, Number(e.target.value))
+                                            }
+                                            className="w-full text-center rounded-md border"
+                                            />
+                                        </td>
+                                        </tr>
+                                    ))}
+
+                                    {/* EMPTY STATE */}
+                                    {lineItems.length === 0 && (
+                                        <tr>
+                                        <td
+                                            colSpan="4"
+                                            className="p-4 text-center text-sm text-slate-500 italic"
+                                        >
+                                            Select a PO Number to load items, or click "Add Item" to add manually.
+                                        </td>
                                         </tr>
                                     )}
                                 </tbody>

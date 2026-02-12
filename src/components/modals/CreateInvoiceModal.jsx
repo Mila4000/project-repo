@@ -1,8 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect,useMemo} from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import CustomFormSelect from '../filter/CustomFormSelect'; 
 import AddItemModal from './AddItemModal'; 
-
+import { fetchSIPreview  } from "../../utils/previewOrder";
+import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
+import { uploadComputation,uploadProofOfPayment } from '../../utils/storageHelpers';
+import AddCustomerModal from '../../components/modals/AddCustomerModal';
 
 const CustomerData = [
     { customer: 'Sarah Jane' },
@@ -11,21 +14,70 @@ const CustomerData = [
 ];
 
 
-function CreateInvoiceModal({ isOpen, onClose }) {
-    if (!isOpen) return null;
-
-    // --- State for Form Values ---
-    const [formValues, setFormValues] = useState({
-        PONumber: '',
-        customer: null,
-        transactionDate: '',
-        remarks: '',
-    });
-
-    // --- NEW STATE FOR ITEMS AND ITEM MODAL ---
+function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
+    const getToday = () => {
+        return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    };
+    const [SIPreview, setSIPreview] = useState([]);
+    const [customers, setCustomers] = useState([]);
+    const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    // File upload state and handler
+    const [receiptFile, setReceiptFile] = useState(null);
+    const [receiptFileName, setReceiptFileName] = useState('No file chosen');
+    const [computationFile, setComputationFile] = useState(null);
+    const [computationFileName, setComputationFileName] = useState('No file chosen');
 
     const [purchaseItems, setPurchaseItems] = useState([]);
+    const [formValues, setFormValues] = useState({
+        PONumber: '',
+        customer: null,       
+        transaction_date: getToday(),
+        remarks: '',
+        contactno: '',       
+        address: '',    
+    });
+    useEffect(() => {
+    const fetchCustomers = async () => {
+        try {
+            setLoadingCustomers(true);
+
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers`); // <-- your endpoint
+            const data = await res.json();
+            setCustomers(data);
+
+        } catch (error) {
+            console.error('Failed to fetch customers:', error);
+        } finally {
+            setLoadingCustomers(false);
+        }
+        };
+        fetchCustomers();
+    }, [isAddModalOpen]);
+
+    useEffect(() => {
+    if (!isOpen) return;
+
+    const loadPreview = async () => {
+        const preview = await fetchSIPreview(formValues.transaction_date);
+        setSIPreview(preview);
+    };
+
+    loadPreview();
+    }, [isOpen, formValues.transaction_date]);
+
+    const paymentTotals = useMemo(() => {
+        return calculatePurchaseTotals(purchaseItems);
+    }, [purchaseItems]);
+
+    const {
+        merchandiseSubtotal,
+        shippingSubtotal,
+        discountSubtotal,
+        totalPayment
+    } = paymentTotals;
+
 
     // --- Handlers ---
     const handleInputChange = (value, name) => {
@@ -34,7 +86,10 @@ function CreateInvoiceModal({ isOpen, onClose }) {
             [name]: value
         }));
     };
-    
+    // Handler to open the Add Customer modal
+    const handleOpenCustomerModal = () => setIsAddModalOpen(true);
+    // Handler to close the Add Customer modal
+    const handleCloseCustomerModal = () => setIsAddModalOpen(false);
     // Handler to open the Add Item modal
     const handleOpenItemModal = () => setIsItemModalOpen(true);
     // Handler to close the Add Item modal
@@ -42,12 +97,10 @@ function CreateInvoiceModal({ isOpen, onClose }) {
 
     // Handler to receive new item data from the AddItemModal and add it to the table
     const handleAddItem = (newItem) => {
-        // Add a unique ID to the new item
-        const itemWithId = {
-            ...newItem,
-            id: Date.now() // Simple unique ID
-        };
-        setPurchaseItems(prev => [...prev, itemWithId]);
+        setPurchaseItems((prev) => [
+        ...prev,
+        { ...newItem },
+        ]);
         handleCloseItemModal();
     };
 
@@ -56,45 +109,186 @@ function CreateInvoiceModal({ isOpen, onClose }) {
         setPurchaseItems(prev => prev.filter(item => item.id !== id));
     };
     
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async(e) => {
         e.preventDefault();
-        console.log("Form Values:", { ...formValues, items: purchaseItems });
-        onClose();
+        
+        if (!purchaseItems.length) {
+            alert("Please add at least one item before submitting the purchase order.");
+            return;
+        }
+
+        if (!formValues.customer || !formValues.transaction_date) {
+            alert("Please complete all required fields.");
+            return;
+        }
+        try {
+            const newSales = {
+              customer: formValues.customer,
+              transaction_date: new Date(formValues.transaction_date).toISOString(),
+              items: purchaseItems.map(item => ({
+                id: item.id,
+                name: item.brand,
+                type: item.type,
+                quantity: Number(item.quantity),
+                unitPrice: Number(item.unitPrice),
+                discount:Number(item.discount),
+                shipping:Number(item.shipping),
+        
+              })),
+                // ✅ PAYMENT TOTALS
+              merchandise_subtotal: Number(merchandiseSubtotal),
+              shipping_subtotal: Number(shippingSubtotal)||0,
+              discount_subtotal: Number(discountSubtotal)||0,
+              total_payment: Number(totalPayment)||0,
+              
+              approval_status: "Pending",
+              delivery_status: "Order Placed",
+              payment_status: "Unpaid",
+            };
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(newSales),
+            });
+        
+            if (!response.ok) {
+              const errorPayload = await response.json();
+              throw new Error(errorPayload?.message || "Failed to save sales");
+            }
+        
+            const savedSales = await response.json();
+            // 2️⃣ UPLOAD RECEIPT (OPTIONAL)
+            if (receiptFile || computationFile) {
+                const computation = await uploadComputation(receiptFile, savedSales.si);
+                const receiptPath = await uploadProofOfPayment(receiptFile, savedSales.si);
+                // 3️⃣ UPDATE PURCHASE WITH RECEIPT PATH
+                await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice/${savedSales.id}/uploads`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ receipt_url: receiptPath, computation_url: computation}),
+                });
+            }
+            
+            onAddSales(savedSales);
+            handleClose();
+        
+          } catch (err) {
+            console.error("sales submission error:", err);
+
+            alert(
+                err?.message ||
+                "An unexpected error occurred while saving the sales invoice."
+            );
+          }
+    };
+    const resetForm = () => {
+        setFormValues({
+        PONumber: "",
+        supplier: null,
+        transaction_date: getToday(),
+        delivery_date: getToday(),
+        warehouse: null,
+        remarks: "",
+        });
+
+        setPurchaseItems([]);
+        setReceiptFileName("No file chosen");
+    };
+    const handleClose = () => {
+        resetForm();
+        onClose(); // this is the parent's closeModal()
     };
 
-    // File upload state and handler
-    const [receiptFileName, setReceiptFileName] = useState('No file chosen');
-    const handleFileChange = (event) => {
-        const files = event.target.files;
-        if (files.length > 0) {
-            const fileName = files[0].name;
-            setReceiptFileName(fileName);
+
+    const handleComputationFileChange = (event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setComputationFile(file);          // ✅ File object
+            setComputationFileName(file.name); // UI only
         } else {
-            setReceiptFileName('No file chosen');
+            setComputationFile(null);
+            setComputationFileName("No file chosen");
+        }
+    };
+    const handlePaymentFileChange = (event) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setReceiptFile(file);          // ✅ File object
+            setReceiptFileName(file.name); // UI only
+        } else {
+            setReceiptFile(null);
+            setReceiptFileName("No file chosen");
         }
     };
 
 
     // --- Data Transformation ---
-    const customerOptions = CustomerData.map(d => ({ value: d.customer, label: d.customer }));
-    
+    const customerOptions = customers.map(c => ({
+        value: c.id ?? c.id,
+        label: c.customer ?? c.name,
+    }));
+    const handleCustomerSelect = (selectedValue, name) => {
+        const selectedCustomer = customers.find(
+            c => c.id === selectedValue
+        );
+
+        setFormValues(prev => ({
+            ...prev,
+            customer: selectedValue,
+            contactno: selectedCustomer?.contactno || '',
+            address: selectedCustomer?.address || '',   // ✅ auto-fill
+        }));
+    };
     // LOGIC: Categorized Subtotals
     const subtotals = purchaseItems.reduce((acc, item) => {
         const amount = parseFloat(item.total) || 0;
-        if (item.type === 'Standard Items') acc.standard += amount;
-        else if (item.type === 'Premium Items') acc.premium += amount;
-        else acc.others += amount;
-        
-        acc.grandTotal += amount;
+        const shipping = parseFloat(item.shipping) || 0;
+        const discount = parseFloat(item.discount) || 0;
+
+        let category;
+
+        if (item.type === 'UNPACK' || item.type === 'Trading Items') {
+            category = 'standard';
+        } else if (item.type === 'VIP' || item.type === 'Commissary Items') {
+            category = 'premium';
+        } else {
+            category = 'others';
+        }
+
+        acc[category].subtotal += amount;
+        acc[category].shipping += shipping;
+        acc[category].discount += discount;
+
+        acc.grand.subtotal += amount;
+        acc.grand.shipping += shipping;
+        acc.grand.discount += discount;
+
         return acc;
-    }, { standard: 0, premium: 0, others: 0, grandTotal: 0 });
+    }, {
+        standard: { subtotal: 0, shipping: 0, discount: 0 },
+        premium: { subtotal: 0, shipping: 0, discount: 0 },
+        others: { subtotal: 0, shipping: 0, discount: 0 },
+        grand: { subtotal: 0, shipping: 0, discount: 0 }
+    });
+    const standardSubtotal = subtotals.standard.subtotal;
+    const standardShipping = subtotals.standard.shipping;
+    const standardDiscount = subtotals.standard.discount;
 
-    // Mapping back to your existing variable names for the design
-    const merchandiseSubtotal = subtotals.standard; 
-    const premiumSubtotal = subtotals.premium;
-    const othersSubtotal = subtotals.others;
-    const totalPayment = subtotals.grandTotal;
+    const premiumSubtotal = subtotals.premium.subtotal;
+    const premiumShipping = subtotals.premium.shipping;
+    const premiumDiscount = subtotals.premium.discount;
 
+    const othersSubtotal = subtotals.others.subtotal;
+    const othersShipping = subtotals.others.shipping;
+    const othersDiscount = subtotals.others.discount;
+
+    const grandTotal = subtotals.grand.subtotal;
+    const grandShipping = subtotals.grand.shipping;
+    const grandDiscount = subtotals.grand.discount;
+
+    // Optional: final payable amount
+    const grandReceivables = grandTotal + grandShipping - grandDiscount;
+    if (!isOpen) return null;
     return (
         <>
             <div 
@@ -119,61 +313,49 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                             <div>
                                 <label htmlFor="PONumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    PO No.
+                                    Invoice No.
                                 </label>
                                 <input
-                                    type="text" 
-                                    id="PONumber" 
-                                    className="w-full text-slate-700 
-                                    dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md 
-                                    border border-slate-300 dark:border-slate-600 bg-white 
-                                    dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 
-                                    dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white cursor-not-allowed"
-                                    readOnly
-                                />
+                                type="text"
+                                id="PONumber"
+                                value={SIPreview}
+                                readOnly
+                                className="
+                                  w-full mt-1 px-3 py-1.5 h-9 rounded-md
+                                  border border-slate-300 dark:border-slate-600
+                                  bg-slate-100 dark:bg-slate-800
+                                  text-slate-500 dark:text-slate-400
+                                  cursor-not-allowed
+                                "
+                              />
                             </div>
                             
-                            {/* SUPPLIER FIELD */}
+                            {/* Customer  FIELD */}
                             <CustomFormSelect
                                 label="Customer"
                                 name="customer"
                                 options={customerOptions}
                                 initialValue={formValues.customer}
-                                onSelect={handleInputChange}
-                                placeholder="" 
+                                onSelect={handleCustomerSelect}
+                                placeholder={loadingCustomers ? "Loading customer..." : "Select Customer"}
                             />
-
-                            <div className="w-full">
-                                <label htmlFor="date" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                                    Transaction Date
-                                </label>
-                                <div className="relative"> 
-                                    <input
-                                        type="date"
-                                        id="date"
-                                        name="transactionDate" 
-                                        value={formValues.transactionDate}
-                                        onChange={handleInputChange} 
-                                        className="w-full px-3 py-2 text-sm rounded-md border border-slate-300
-                                                    bg-white text-slate-700
-                                                    dark:bg-slate-700 dark:border-slate-600 dark:text-slate-200 
-                                                    focus:outline-none focus:border-blue-500 transition 
-                                                    appearance-none date-input-no-icon pr-10" 
-                                    />
-                                    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                                        <svg 
-                                            xmlns="http://www.w3.org/2000/svg" 
-                                            viewBox="0 0 24 24" fill="none" 
-                                            stroke="currentColor" strokeWidth="2" 
-                                            strokeLinecap="round" strokeLinejoin="round" 
-                                            className="w-5 h-5 text-slate-800 dark:text-slate-300"> 
-                                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"/>
-                                            <line x1="16" x2="16" y1="2" y2="6"/>
-                                            <line x1="8" x2="8" y1="2" y2="6"/>
-                                            <line x1="3" x2="21" y1="10" y2="10"/>
-                                        </svg>
-                                    </div>
-                                </div>
+                            <button className="cursor-pointer flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg hover:shadow-lg transition-all"
+                            onClick={handleOpenCustomerModal} type="button"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span className="text-sm font-medium">Add Customer</span>
+                            </button>
+                            <div> 
+                                <label htmlFor="transaction_date" 
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
+                                Transaction Date 
+                                </label> 
+                                <input type="date" 
+                                id="transaction_date"
+                                name="transaction_date"
+                                value={formValues.transaction_date}
+                                onChange={(e) => handleInputChange(e.target.value, e.target.name)} 
+                                className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white" /> 
                             </div>
                             
 
@@ -184,18 +366,22 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                 <input 
                                     type="text" 
                                     id="ContactNumber"
+                                    value={formValues.contactno}
                                     className="w-full text-slate-700 
                                     dark:text-slate-200 mt-1 px-3 py-1.5 h-9 
                                     rounded-md border border-slate-300 dark:border-slate-600 
                                     bg-white dark:bg-slate-700 shadow-xs focus:outline-none 
                                     focus:border-blue-500 dark:focus:border-blue-500 
                                     focus:caret-slate-500 dark:focus:caret-white"
+                                    readOnly
                                 />
                             </div>
 
                             <div className = "col-span-2">
                                 <label htmlFor="Address" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Address</label>
-                                <input type = "text" id="Address" name="Address" rows="2" value={formValues.Address} onChange={handleInputChange}
+                                
+                                <input type = "text" id="Address" name="Address" rows="2" value={formValues.address}
+                                    readOnly 
                                 className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 text-slate-700 dark:text-slate-200 resize-none" />
                             </div>
                             
@@ -264,8 +450,21 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="space-y-4">
 
-                                {/* FILE UPLOAD FIELD */}
+                                {/* COMPUTATION UPLOAD FIELD */}
                                 <label className="block mb-3 text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="file_input">Computation</label>
+                                <div className="relative flex rounded-lg overflow-hidden w-full max-w-xs bg-white border border-slate-300 dark:bg-slate-700 dark:border-slate-600 hover:border-blue-400 shadow-xs">
+                                    <span className="bg-slate-400/20 dark:bg-slate-600/90 text-slate-600/80 dark:text-slate-400/80 px-3 py-2 text-sm font-medium flex items-center select-none cursor-pointer">
+                                        Choose File
+                                    </span>
+                                    
+                                    <span className="text-slate-500 dark:text-slate-400 px-4 py-2 text-sm flex items-center truncate overflow-hidden whitespace-nowrap min-w-0">
+                                        {computationFileName}
+                                    </span>
+                                    
+                                    <input type="file" id="file_input" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleComputationFileChange}/>
+                                </div>
+                                {/* PROOF UPLOAD FIELD */}
+                                <label className="block mb-3 text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="file_input">Delivery Receipt</label>
                                 <div className="relative flex rounded-lg overflow-hidden w-full max-w-xs bg-white border border-slate-300 dark:bg-slate-700 dark:border-slate-600 hover:border-blue-400 shadow-xs">
                                     <span className="bg-slate-400/20 dark:bg-slate-600/90 text-slate-600/80 dark:text-slate-400/80 px-3 py-2 text-sm font-medium flex items-center select-none cursor-pointer">
                                         Choose File
@@ -275,7 +474,7 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                         {receiptFileName}
                                     </span>
                                     
-                                    <input type="file" id="file_input" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange}/>
+                                    <input type="file" id="file_input" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handlePaymentFileChange}/>
                                 </div>
                             </div>
                             
@@ -287,28 +486,45 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                         <tbody>
                                             <tr>
                                                 <td></td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Standard Items</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Premium Items</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Trading Items</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Commissary Items</td>
                                                 <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200 text-end">Other Items/Services</td>
                                             </tr>
                                             <tr className="bg-slate-200/50 dark:bg-slate-700/50">
                                                 <td className="py-3 px-4 text-sm text-slate-700 font-medium dark:text-slate-200">Merchandise Subtotal</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{merchandiseSubtotal.toFixed(2)}</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{standardSubtotal.toFixed(2)}</td>
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{premiumSubtotal.toFixed(2)}</td>
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{othersSubtotal.toFixed(2)}</td>
                                             </tr>
-                                            <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">Shipping Subtotal</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                            <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">
+                                                    Shipping Subtotal
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {standardShipping.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {premiumShipping.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
+                                                    {othersShipping.toFixed(2)}
+                                                </td>
                                             </tr>
-                                            <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">Item Discount Subtotal</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                            <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200">
+                                                    Item Discount Subtotal
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {standardDiscount.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-xs text-slate-700 dark:text-slate-200 text-end">
+                                                    {premiumDiscount.toFixed(2)}
+                                                </td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">
+                                                    {othersDiscount.toFixed(2)}
+                                                </td>
                                             </tr>
+
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 pb-6 text-xs text-slate-700 dark:text-slate-200">Order Discount</td>
                                                 <td className="py-3 px-4 pb-6 text-xs text-slate-700 dark:text-slate-200 text-end">0.00</td>
@@ -318,7 +534,7 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                             <tr className="bg-slate-200/50 dark:bg-slate-700/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 font-bold dark:font-bold"></td>
                                                 <td colSpan={3} className="py-3 px-4 text-md text-slate-700 dark:text-slate-200 font-medium dark:font-bold text-end">
-                                                    <span className  = "mr-2 text-lg font-normal">Subtotal: </span> <span className = "text-lg ">{totalPayment.toFixed(2)}</span>
+                                                    <span className  = "mr-2 text-lg font-normal">Total Payment: </span> <span className = "text-lg ">{grandReceivables.toFixed(2)}</span>
                                                 </td>
                                             </tr>
                                         </tbody>
@@ -326,8 +542,6 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                 </div>
                             </div>
                         </div>
-
-                    </form>
 
                         {/* Action Buttons */}
                         <div className="pt-4 mt-4 border-t border-slate-300 dark:border-slate-700 flex justify-end space-x-3 flex-shrink-0">
@@ -338,6 +552,8 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                                 Save Purchase
                             </button>
                         </div>
+                    </form>
+
                 </div>
             </div>
 
@@ -345,6 +561,11 @@ function CreateInvoiceModal({ isOpen, onClose }) {
                 isOpen={isItemModalOpen} 
                 onClose={handleCloseItemModal} 
                 onAddItem={handleAddItem} 
+                loadItemList={itemList}
+            />
+            <AddCustomerModal
+                isOpen={isAddModalOpen} 
+                onClose={handleCloseCustomerModal} 
             />
         </>
     );

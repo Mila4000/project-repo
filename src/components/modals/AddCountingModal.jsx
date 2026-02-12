@@ -56,13 +56,16 @@ function AddCountingModal({ isOpen, onClose }) {
     // --- 4. HANDLERS FOR MAIN FORM FIELDS ---
     const handleInputChange = (e) => {
         const { name, value } = e.target;
+
+
         setFormValues(prev => ({
             ...prev,
             [name]: value
         }));
     };
 
-    const handleSubmit = (e) => {
+
+    const handleSubmit = async(e) => {
         e.preventDefault();
         
         // Final structure to send: main form data + item list
@@ -71,8 +74,23 @@ function AddCountingModal({ isOpen, onClose }) {
             itemsToCount: items.filter(item => item.item.trim() !== '' || item.quantity.trim() !== '')
         };
         
-        console.log("New Counting Data:", finalData);
-        
+        try {
+            const response = await fetch(
+                `${import.meta.env.VITE_API_URL}/api/inventory`,
+                {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(finalData),
+                }
+            ); 
+            if (!response.ok) {
+                const errText = await response.text();
+                console.error("Backend error:", errText);
+                throw new Error("Failed to save purchase");
+            }
+        } catch (error) {
+            console.error("Adding count failed", error);
+        }
         setFormValues({ CountDate: '', Warehouse: '', remarks: '' });
         setItems([{ id: Date.now(), item: '', quantity: '' }]);
         onClose();
@@ -139,9 +157,8 @@ function AddCountingModal({ isOpen, onClose }) {
                             name="Warehouse" 
                             options={WarehouseOption}
                             initialValue={formValues.Warehouse}
-                            onSelect={(selected) => handleInputChange({ target: { name: 'Warehouse', value: selected.value } })}
-                            placeholder="" 
-                        />                 
+                            onSelect={(selected) => {handleInputChange({ target: { name: 'Warehouse', value: selected?.value ?? selected}});}}
+                        /> 
                     </div>
 
                     <div>
@@ -155,6 +172,7 @@ function AddCountingModal({ isOpen, onClose }) {
                             value={formValues.remarks}
                             onChange={handleInputChange} 
                             className="mt-1 p-2 block w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white resize-none text-slate-700 dark:text-slate-200"
+
                         />
                     </div>
 

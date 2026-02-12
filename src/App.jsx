@@ -1,3 +1,4 @@
+import "./App.css";
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 
@@ -28,7 +29,7 @@ function App() {
     <Routes>
       <Route path="/" element={<MainLayout />}>
         {/* Dashboard */}
-        <Route path="" element={<DashboardPage />} />
+        <Route index element={<DashboardPage />} />
 
         {/* Purchasing */}
         <Route path="purchasing/createpurchase" element={<CreatePurchase />} />

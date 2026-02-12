@@ -5,15 +5,51 @@ import CustomSupplierSelect from '../../components/filter/CustomSupplierSelect';
 import CustomPaymentStatusSelect from '../../components/filter/CustomPaymentStatusSelect'; 
 
 const StocksTransferData = [
-  { TransferDate: '10/10/2025', Sender: "Saog", Receiver: 'Meycuayan', Remarks: 'Restock', TotalQuantity: '50.00', TotalValue: '11,000.00', Status: 'Delivered' },
-  { TransferDate: '10/11/2024', Sender: "Saog", Receiver: 'Quezon City', Remarks: 'Restock Jowls', TotalQuantity: '50.00', TotalValue: '10,750.00', Status: 'In Transit' },
-  { TransferDate: '10/11/2024', Sender: "Quezon City", Receiver: 'Saog', Remarks: 'Shift Stock', TotalQuantity: '10.15', TotalValue: '4719.75', Status: 'Delayed' },
-  { TransferDate: '12/25/2025', Sender: "Meycuayan", Receiver: 'Saog', Remarks: 'Move Meat', TotalQuantity: '5.17', TotalValue: '1240.80', Status: 'Cancelled' }
+{
+    id: 1,
+    TransferDate: '10/10/2025', 
+    Sender: "Saog", 
+    Receiver: 'Meycuayan', 
+    Remarks: 'Restock', 
+    TotalQuantity: '50.00', 
+    TotalValue: '11,000.00', 
+    Status: 'Delivered' 
+},
+{
+    id: 2,
+    TransferDate: '10/11/2024', 
+    Sender: "Saog", 
+    Receiver: 'Quezon City', 
+    Remarks: 'Restock Jowls', 
+    TotalQuantity: '50.00', 
+    TotalValue: '10,750.00', 
+    Status: 'In Transit' 
+},
+{
+    id: 3,
+    TransferDate: '10/11/2024', 
+    Sender: "Quezon City", 
+    Receiver: 'Saog', 
+    Remarks: 'Shift Stock', 
+    TotalQuantity: '10.15', 
+    TotalValue: '4719.75', 
+    Status: 'Delayed' 
+},
+{
+    id: 4,
+    TransferDate: '12/25/2025', 
+    Sender: "Meycuayan", 
+    Receiver: 'Saog', 
+    Remarks: 'Move Meat', 
+    TotalQuantity: '5.17', 
+    TotalValue: '1240.80', 
+    Status: 'Cancelled' 
+}
 ];
 
 const ALL_OPTION = 'All';
 
-function StocksTransferTable({ rowLimit, currentPage, onTotalDataChange, onAddStockTransferClick, iconProps, onEdit }) {
+function StocksTransferTable({ rowLimit, currentPage, onTotalDataChange, onAddStockTransferClick, iconProps, onEditStockTransferClick, OnDeleteCountingClick }) {
     // --- 1. INITIAL STATES (Recalibrated to match placeholders) ---
     const [dateFilter, setDateFilter] = useState('Transfer Date');
     const [senderFilter, setSenderFilter] = useState('Sender');
@@ -132,7 +168,7 @@ function StocksTransferTable({ rowLimit, currentPage, onTotalDataChange, onAddSt
                 <tbody>
                     {paginatedData.length > 0 ? (
                         paginatedData.map((order, index) => (
-                            <tr key={`${order.TransferDate}-${index}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                            <tr key={`${order.id}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                 <td className="p-4 text-sm font-medium text-blue-500">{order.TransferDate}</td>
                                 <td className="p-4 text-sm text-slate-800 dark:text-white">{order.Sender}</td>
                                 <td className="p-4 text-sm text-slate-800 dark:text-white">{order.Receiver}</td>
@@ -146,11 +182,13 @@ function StocksTransferTable({ rowLimit, currentPage, onTotalDataChange, onAddSt
                                 </td>
                                 <td className="p-4 flex items-center justify-center gap-3"> 
                                     <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
-                                        onClick={() => onEdit(order)}
+                                        onClick={() => onEditStockTransferClick(order)}
                                     >
                                         <Pencil className="w-4 h-4"/>
                                     </span>
-                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer">
+                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer"
+                                        onClick={() => OnDeleteCountingClick(order, index)}
+                                    >
                                         <Trash2 className="w-4 h-4"/>
                                     </span>
                                 </td>

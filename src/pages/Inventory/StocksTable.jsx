@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Plus, Pencil, Trash2 } from 'lucide-react'; 
+import { Plus, Eye, Trash2 } from 'lucide-react'; 
 import CustomWarehouseSelect from '../../components/filter/CustomSupplierSelect'; 
 import CustomStatusSelect from '../../components/filter/CustomDeliveryStatusSelect'; 
 
@@ -23,30 +23,67 @@ const StocksData = [
 
 const ALL_OPTION = 'All';
 
-function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, iconProps }) {
+function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, iconProps,onAddProductClose }) {
     // These values match the first item in the options array below
-    const [warehouseFilter, setWarehouseFilter] = useState('Warehouse');
-    const [statusFilter, setStatusFilter] = useState('Status');
+    const [warehouseFilter, setWarehouseFilter] = useState('warehouse');
+    const [statusFilter, setStatusFilter] = useState('status');
+    
+    const [items, setItems] =useState([]);
+    
+    const fetchItems = async () => {
+        try {
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/stock`);
+            const data = await res.json();
 
+            const normalized = data.map(item => ({
+            id: item.id,
+            item_name: item.item_name,
+            quantity: item.quantity,
+            threshold_count: item.threshold_count,
+            suggested_retail_price: item.suggested_retail_price,
+            status: item.status,
+            item_code: item.item_code,
+
+            // flatten warehouse
+            warehouse_id: item.warehouse?.id ?? null,
+            warehouse_name: item.warehouse?.whouse_name ?? "—",
+            warehouse_address: item.warehouse?.whouse_address ?? "—",
+
+            // keep relations if needed
+            purchased_order_item: item.purchased_order_item ?? []
+            }));
+
+            setItems(normalized);
+        } catch (err) {
+            console.error("Failed to fetch received items", err);
+        }
+        };
+
+    
+      useEffect(() => {
+    if (!onAddProductClose) {
+        fetchItems();
+    }
+    }, [onAddProductClose]);
     // 1. Extract Options (Strings only to match your CustomSelect components)
     const warehouseOptions = useMemo(() => {
-        const unique = [...new Set(StocksData.map(item => item.Warehouse))];
-        return ['Warehouse', ALL_OPTION, ...unique.sort()];
+        const unique = [...new Set(items.map(item => item.warehouse))];
+        return ['warehouse', ALL_OPTION, ...unique.sort()];
     }, []);
 
     const statusOptions = useMemo(() => {
-        const unique = [...new Set(StocksData.map(item => item.Status))];
-        return ['Status', ALL_OPTION, ...unique.sort()];
+        const unique = [...new Set(items.map(item => item.status))];
+        return ['status', ALL_OPTION, ...unique.sort()];
     }, []);
 
     // 2. Filter Logic
     const filteredData = useMemo(() => {
-        return StocksData.filter(item => {
-            const matchW = warehouseFilter === 'Warehouse' || warehouseFilter === ALL_OPTION || item.Warehouse === warehouseFilter;
-            const matchS = statusFilter === 'Status' || statusFilter === ALL_OPTION || item.Status === statusFilter;
+        return items.filter(item => {
+            const matchW = warehouseFilter === 'warehouse' || warehouseFilter === ALL_OPTION || item.warehouse === warehouseFilter;
+            const matchS = statusFilter === 'status' || statusFilter === ALL_OPTION || item.status === statusFilter;
             return matchW && matchS;
         });
-    }, [warehouseFilter, statusFilter]);
+    }, [items,warehouseFilter, statusFilter]);
 
     // 3. Update Parent with new total count for Pagination
     useEffect(() => {
@@ -58,7 +95,20 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
         const start = (currentPage - 1) * rowLimit;
         return filteredData.slice(start, start + rowLimit);
     }, [filteredData, rowLimit, currentPage]);
+    const handleDeletePurchase = async (id) => {
+        if (!confirm("Delete this stock?")) return;
+        try {
+            const res = await fetch(
+            `${import.meta.env.VITE_API_URL}/api/stock/${id}`,
+            { method: "DELETE" }
+            );
 
+            if (!res.ok) throw new Error("Delete failed");
+            fetchItems();
+        } catch (err) {
+            console.error(err);
+        }
+    };
     const getStatusColor = (status) => {
         switch (status) {
             case "In Stock": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
@@ -66,7 +116,6 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
             default: return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
         }
     };
-
     return (
         <div className="overflow-x-auto pb-6 mt-4 min-h-[300px]">
             {/* Filters Row */}
@@ -90,7 +139,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                     className="flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg hover:shadow-lg transition-all cursor-pointer active:scale-95"
                 >
                     <Plus className="w-4 h-4" />
-                    <span className="text-sm font-medium">Add Product</span>
+                    <span className="text-sm font-medium">Add Item</span>
                 </button>
             </div>
 
@@ -102,6 +151,8 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Item Name</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Item Code</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Qty (KG)</th>
+                        <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Unit Price</th>
+                        <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Total Value</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Status</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
                     </tr>
@@ -109,23 +160,26 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                 <tbody>
                     {paginatedData.length > 0 ? (
                         paginatedData.map((item, index) => (
-                            <tr key={`${item.ItemCode}-${index}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                                <td className="p-4 text-sm font-medium text-blue-500">{item.Warehouse}</td>
-                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.ItemName}</td>
-                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.ItemCode}</td>
-                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.Quantity}</td>
+                            <tr key={`${item.id}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td className="p-4 text-sm font-medium text-blue-500">{item.warehouse_name}</td>
+                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.item_name}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.item_code}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.suggested_retail_price}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity * item.suggested_retail_price}</td>
+
                                 <td className="p-4 text-center">
-                                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(item.Status)}`}>
-                                        {item.Status}
+                                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(item.status)}`}>
+                                        {item.status}
                                     </span>
                                 </td>
                                 <td className="p-4 flex items-center gap-3"> 
                                     <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
-                                        // onClick={() => onEdit(order)}
+                                        //onClick={() => onEdit(order)}
                                     >
-                                        <Pencil className="w-4 h-4"/>
+                                        <Eye className="w-4 h-4"/>
                                     </span>
-                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer">
+                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer" onClick={() => handleDeletePurchase(item.id)}>
                                         <Trash2 className="w-4 h-4"/>
                                     </span>
                                 </td>

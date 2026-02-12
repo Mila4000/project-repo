@@ -1,112 +1,295 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
-import CustomFormSelect from '../filter/CustomFormSelect'; 
-import AddItemModal from './AddItemModal'; 
+import React, { useState,useMemo, useEffect } from "react";
+import { Plus, Trash2, X , Pencil} from "lucide-react";
 
+import CustomFormSelect from "../filter/CustomFormSelect";
+import AddItemModal from "./AddItemModal";
+import EditItemModal from "./EditItemModal";
+import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
+import { uploadReceipt } from "../../utils/storageHelpers";
+import { fetchPoPreview  } from "../../utils/previewOrder";
 
-const SupplierData = [
-    { supplier: 'Earl Meats Inc.' },
-    { supplier: 'Javier Meats' },
-    { supplier: 'Betez Trading' }
-];
+/* -------------------------------------------------------------------------- */
+/*                                   DATA                                     */
+/* -------------------------------------------------------------------------- */
 
 const warehouseData = [
-    { warehouse: 'Saog' },
-    { warehouse: 'Meycuayan' },
-    { warehouse: 'Quezon City' }
+  { warehouse: "Saog" },
+  { warehouse: "Meycuayan" },
+  { warehouse: "Quezon City" },
 ];
 
+/* -------------------------------------------------------------------------- */
+/*                             MAIN COMPONENT                                 */
+/* -------------------------------------------------------------------------- */
 
-function AddPurchaseOrderModal({ isOpen, onClose }) {
-    if (!isOpen) return null;
+function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
+  /* ----------------------------- STATE ----------------------------------- */
 
-    // --- State for Form Values ---
-    const [formValues, setFormValues] = useState({
-        PONumber: '',
-        supplier: null,
-        transactionDate: '',
-        warehouse: null,
-        remarks: '',
+  const [suppliers, setSuppliers] = useState([]);
+  const [loadingSuppliers, setLoadingSuppliers] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [discount, setDiscount] = useState(0);
+  const [poPreview, setPoPreview] = useState("");
+
+  const [receiptFile, setReceiptFile] = useState(null);
+  const [receiptFileName, setReceiptFileName] = useState("No file chosen");
+
+  const [isItemModalOpen, setIsItemModalOpen] = useState(false);
+  const [purchaseItems, setPurchaseItems] = useState([]);
+  const [editingItem, setEditingItem] = useState(null);
+  const [isEditItemModalOpen, setIsEditItemModalOpen] = useState(false);
+  const getToday = () => {
+    return new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  };
+
+
+  const [formValues, setFormValues] = useState({
+    PONumber: "",
+    supplier: null,
+    transaction_date: getToday(),
+    delivery_date: getToday(),
+    warehouse: null,
+    remarks: "",
+  });
+
+  /* ----------------------------- HANDLERS -------------------------------- */
+
+  const handleInputChange = (value, name) => {
+    setFormValues((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+  const resetForm = () => {
+    setFormValues({
+      PONumber: "",
+      supplier: null,
+      transaction_date: getToday(),
+      delivery_date: getToday(),
+      warehouse: null,
+      remarks: "",
     });
 
-    // --- NEW STATE FOR ITEMS AND ITEM MODAL ---
-    const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-    // Structure: { id, brand, type, quantity, unitPrice, total }
-    const [purchaseItems, setPurchaseItems] = useState([
-        
+    setPurchaseItems([]);
+    setReceiptFileName("No file chosen");
+  };
+   const handleSaveLocalItem = (item) => {
+    setPurchaseItems(prev =>
+        prev.map(i => (i.id === item.id ? item : i))
+    );
+    setIsEditItemModalOpen(false);
+    };
+  const handleClose = () => {
+    resetForm();
+    onClose(); // this is the parent's closeModal()
+  };
+  const handleEditModal = () => {
+    setIsEditItemModalOpen(false);
+  }
+  const handleOpenItemModal = () => setIsItemModalOpen(true);
+  const handleCloseItemModal = () => setIsItemModalOpen(false);
+
+  const handleAddItem = (newItem) => {
+    setPurchaseItems((prev) => [
+      ...prev,
+      { ...newItem },
+    ]);
+    handleCloseItemModal();
+  };
+
+  const handleRemoveItem = (id) => {
+    setPurchaseItems((prev) => prev.filter((item) => item.temp_id !== id));
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0] || null;
+    setReceiptFile(file);
+    setReceiptFileName(file ? file.name : "No file chosen");
+  };
+  /* ----------------------------- SUBMIT ---------------------------------- */
+
+  const handleFormSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (!purchaseItems.length) {
+    alert("Please add at least one item before submitting the purchase order.");
+    return;
+  }
+
+  if (!formValues.supplier || !formValues.transaction_date || !formValues.delivery_date) {
+    alert("Please complete all required fields.");
+    return;
+  }
+  console.log("purchaseItems on Submit:", purchaseItems);
+  try {
+    // 1️⃣ CREATE PURCHASE (NO RECEIPT YET)
+    const newPurchase = {
+      supplier: formValues.supplier,
+      warehouse: formValues.warehouse,
+      transaction_date: new Date(formValues.transaction_date).toISOString(),
+      delivery_date: new Date(formValues.delivery_date).toISOString(),
+      items: purchaseItems.map(item => ({
+        id: item.id,
+        name: item.product_name,
+        type: item.type,
+        quantity: Number(item.quantity),
+        unitPrice: Number(item.unit_price),
+        discount:Number(item.discount),
+        shipping:Number(item.shipping),
+
+      })),
+        // ✅ PAYMENT TOTALS
+      merchandise_subtotal: Number(merchandiseSubtotal),
+      shipping_subtotal: Number(shippingSubtotal),
+      discount_subtotal: Number(discountSubtotal),
+      total_payment: Number(totalPayment),
+      
+      approval_status: "Pending",
+      delivery_status: "Order Placed",
+      payment_status: "Unpaid",
+      remarks: formValues.remarks
+    };
+    console.log("Submitting New Purchase:", newPurchase);
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newPurchase),
+    });
+
+    if (!response.ok) {
+      const errorPayload = await response.json();
+      throw new Error(errorPayload?.message || "Failed to save purchase");
+    }
+
+    const savedPurchase = await response.json(); 
+    // 👆 contains { id, po }
+
+    // 2️⃣ UPLOAD RECEIPT (OPTIONAL)
+    if (receiptFile) {
+      const receiptPath = await uploadReceipt(receiptFile, savedPurchase.po);
+
+      // 3️⃣ UPDATE PURCHASE WITH RECEIPT PATH
+      await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing/${savedPurchase.id}/receipt`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ receipt_url: receiptPath }),
+      });
+    }
+
+    onAddPurchase(savedPurchase);
+    handleClose();
+
+  } catch (err) {
+    console.error("PO submission error:", err);
+    alert(
+        err?.message ||
+        "An unexpected error occurred while saving the purchase order."
+    );
+  }
+};
+    const handleAddLocalItem = (item) => {
+      console.log("Adding Local Item:", item);
+    const restructuredItem = {
+        id: item.id,
+        temp_id: crypto.randomUUID(), // Unique temp ID for local management
+        product_name: item.brand,
+        type: item.type,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unitPrice),
+        line_total:
+        Number(item.quantity) * Number(item.unitPrice),
+
+        // frontend-only fields (NOT sent to DB)
+        shipping: Number(item.shipping ?? 0),
+        discount: Number(item.discount ?? 0),
+    };
+
+
+    setPurchaseItems(prev => [
+        ...prev,
+        {
+        ...restructuredItem
+        }
     ]);
 
-    // --- Handlers ---
-    const handleInputChange = (value, name) => {
-        setFormValues(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-    
-    // Handler to open the Add Item modal
-    const handleOpenItemModal = () => setIsItemModalOpen(true);
-    // Handler to close the Add Item modal
-    const handleCloseItemModal = () => setIsItemModalOpen(false);
-
-    // Handler to receive new item data from the AddItemModal and add it to the table
-    const handleAddItem = (newItem) => {
-        // Add a unique ID to the new item
-        const itemWithId = {
-            ...newItem,
-            id: Date.now() // Simple unique ID
-        };
-        setPurchaseItems(prev => [...prev, itemWithId]);
-        handleCloseItemModal();
+    handleCloseItemModal();
     };
 
-    // Handler to remove an item from the table
-    const handleRemoveItem = (id) => {
-        setPurchaseItems(prev => prev.filter(item => item.id !== id));
-    };
-    
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        console.log("Form Values:", { ...formValues, items: purchaseItems });
-        onClose();
+  
+  const handleEditItem = (item) => {
+    setEditingItem(item);
+    setIsEditItemModalOpen(true);
     };
 
-    // File upload state and handler
-    const [receiptFileName, setReceiptFileName] = useState('No file chosen');
-    const handleFileChange = (event) => {
-        const files = event.target.files;
-        if (files.length > 0) {
-            const fileName = files[0].name;
-            setReceiptFileName(fileName);
-        } else {
-            setReceiptFileName('No file chosen');
-        }
+  /* ----------------------------- COMPUTED -------------------------------- */
+
+  const supplierOptions = suppliers.map((s) => ({
+    value: s.id,
+    label: s.businessname,
+  }));
+
+  const warehouseOptions = warehouseData.map((w) => ({
+    value: w.warehouse,
+    label: w.warehouse,
+  }));
+
+    const paymentTotals = useMemo(() => {
+        return calculatePurchaseTotals(purchaseItems);
+    }, [purchaseItems]);
+
+    const {
+        merchandiseSubtotal,
+        shippingSubtotal,
+        discountSubtotal,
+        totalPayment
+    } = paymentTotals;
+  /* ----------------------------- EFFECTS --------------------------------- */
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchSuppliers = async () => {
+      setLoadingSuppliers(true);
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`);
+        const data = await res.json();
+        setSuppliers(data);
+      } catch (err) {
+        console.error("Failed to load suppliers", err);
+      } finally {
+        setLoadingSuppliers(false);
+      }
     };
 
+    fetchSuppliers();
+  }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen) return;
 
-    // --- Data Transformation ---
-    const supplierOptions = SupplierData.map(d => ({ value: d.supplier, label: d.supplier }));
-    const warehouseOptions = warehouseData.map(d => ({ value: d.warehouse, label: d.warehouse }));
-    
-    // Calculate total payments dynamically (Simple total sum for demonstration)
-    const merchandiseSubtotal = purchaseItems.reduce((sum, item) => sum + item.total, 0);
-    const totalPayment = merchandiseSubtotal; // For simplicity, only using subtotal
+    const loadPreview = async () => {
+      const preview = await fetchPoPreview(formValues.transaction_date);
+      setPoPreview(preview);
+    };
 
+    loadPreview();
+  }, [isOpen, formValues.transaction_date]);
+  
+  /* ----------------------------- GUARD ----------------------------------- */
+
+  if (!isOpen) return null;
+
+  /* ----------------------------- JSX ------------------------------------- */
     return (
         <>
-            <div 
-                className="fixed inset-0 bg-black/20 dark:bg-black/20 z-40 flex items-center justify-center"
-            >
-                {/* Modal Content Box */}
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-lg shadow-2xl w-full max-w-4xl mx-4" 
-                    onClick={e => e.stopPropagation()}>
+            <div className="fixed inset-0 bg-black/20 dark:bg-black/20 z-40 overflow-y-auto">
+                <div className="relative my-10 mx-auto max-w-4xl bg-white dark:bg-slate-800 p-8 rounded-lg shadow-2xl">
                     
                     <div className = "w-full flex items-center justify-between mb-6 pb-6 border-b border-slate-300 dark:border-slate-700">
                         <h2 className="text-2xl font-bold text-slate-800 dark:text-white">
                             Create New Purchase (PO)
                         </h2>
 
-                        <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
+                        <button onClick={handleClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors">
                             <X className="w-7 h-7 text-slate-600 dark:text-slate-300 cursor-pointer"/>
                         </button>
                     </div>
@@ -115,35 +298,61 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
                     <form onSubmit={handleFormSubmit} className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             <div>
-                                <label htmlFor="PONumber" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    PO No.
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="PONumber" 
-                                    className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
-                                />
+                              <label
+                                htmlFor="PONumber"
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                              >
+                                PO No. (Preview)
+                              </label>
+
+                              <input
+                                type="text"
+                                id="PONumber"
+                                value={poPreview}
+                                disabled
+                                className="
+                                  w-full mt-1 px-3 py-1.5 h-9 rounded-md
+                                  border border-slate-300 dark:border-slate-600
+                                  bg-slate-100 dark:bg-slate-800
+                                  text-slate-500 dark:text-slate-400
+                                  cursor-not-allowed
+                                "
+                              />
                             </div>
                             
                             {/* SUPPLIER FIELD */}
                             <CustomFormSelect
-                                label="Supplier"
-                                name="supplier"
-                                options={supplierOptions}
-                                initialValue={formValues.supplier}
-                                onSelect={handleInputChange}
-                                placeholder="" 
+                            label="Supplier"
+                            name="supplier"
+                            options={supplierOptions}
+                            initialValue={formValues.supplier}
+                            onSelect={handleInputChange}
+                            placeholder={loadingSuppliers ? "Loading suppliers..." : "Select supplier"}
                             />
 
-                            <div>
-                                <label htmlFor="transactionDate" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Transaction Date
-                                </label>
-                                <input 
-                                    type="text" 
-                                    id="transactionDate" 
-                                    className="w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white"
-                                />
+                            <div> 
+                                <label htmlFor="transaction_date" 
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
+                                Transaction Date 
+                                </label> 
+                                <input type="date" 
+                                id="transaction_date"
+                                name="transaction_date"
+                                value={formValues.transaction_date}
+                                onChange={(e) => handleInputChange(e.target.value, e.target.name)} 
+                                className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white" /> 
+                            </div>
+                            <div> 
+                                <label htmlFor="delivery_date" 
+                                className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
+                                Delivery Date 
+                                </label> 
+                                <input type="date" 
+                                id="delivery_date"
+                                name="delivery_date"
+                                value={formValues.delivery_date}
+                                onChange={(e) => handleInputChange(e.target.value, e.target.name)} 
+                                className="relative z-10 w-full text-slate-700 dark:text-slate-200 mt-1 px-3 py-1.5 h-9 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 dark:focus:border-blue-500 focus:caret-slate-500 dark:focus:caret-white" /> 
                             </div>
                             
 
@@ -153,8 +362,7 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
                                 name="warehouse"
                                 options={warehouseOptions}
                                 initialValue={formValues.warehouse}
-                                onSelect={handleInputChange}
-                                placeholder="" 
+                                onSelect={handleInputChange} 
                             />
                             
                         </div>
@@ -191,15 +399,28 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
                                                 key={item.id} 
                                                 className = "border-b border-slate-300 dark:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
                                             >
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.brand}</td>
+                                              {console.log("Rendering Item:", item)}
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.product_name}</td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.type}</td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.quantity}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.unitPrice.toFixed(2)}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{(item.total).toFixed(2)}</td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  ₱{Number(item.unit_price).toFixed(2)}
+                                                </td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  ₱{Number(item.line_total).toFixed(2)}
+                                                </td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
                                                     <button 
                                                         type="button" 
-                                                        onClick={() => handleRemoveItem(item.id)}
+                                                        onClick={() => handleEditItem(item)}
+                                                        className="text-blue-500 hover:text-blue-700 p-1 rounded transition-colors cursor-pointer"
+                                                        aria-label={`Edit item ${item.brand}`}
+                                                    >
+                                                        <Pencil className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={() => handleRemoveItem(item.temp_id)}
                                                         className="text-red-500 hover:text-red-700 p-1 rounded transition-colors cursor-pointer"
                                                         aria-label={`Remove item ${item.brand}`}
                                                     >
@@ -235,7 +456,7 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
                                 />
 
                                 {/* FILE UPLOAD FIELD */}
-                                <label className="block mb-2.5 text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="file_input">Upload file</label>
+                                <label className="block mb-2.5 text-sm font-medium text-slate-700 dark:text-slate-300" htmlFor="file_input">Upload Delivery Receipt</label>
                                 <div className="relative flex rounded-lg overflow-hidden w-full max-w-xs bg-white border border-slate-300 dark:bg-slate-700 dark:border-slate-600 hover:border-blue-400 shadow-xs">
                                     <span className="bg-slate-400/20 dark:bg-slate-600/90 text-slate-600/80 dark:text-slate-400/80 px-3 py-2 text-sm font-medium flex items-center select-none cursor-pointer">
                                         Choose File
@@ -261,15 +482,40 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Shipping Subtotal</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{shippingSubtotal.toFixed(2)}</td>
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Item Discount Subtotal</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">{discountSubtotal.toFixed(2)}</td>
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200">Order Discount</td>
-                                                <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 text-end">0.00</td>
+                                                <td className="py-3 px-4 text-end">
+                                                  {!isEditing ? (
+                                                    <span
+                                                      className="cursor-pointer text-sm text-slate-700 dark:text-slate-200"
+                                                      onClick={() => setIsEditing(true)}
+                                                    >
+                                                      {discount.toFixed(2)}
+                                                    </span>
+                                                  ) : (
+                                                    <input
+                                                      type="number"
+                                                      autoFocus
+                                                      min="0"
+                                                      step="0.01"
+                                                      value={discount}
+                                                      onChange={(e) => setDiscount(Number(e.target.value))}
+                                                      onBlur={() => setIsEditing(false)}
+                                                      className="
+                                                        w-28 text-end rounded-md border border-slate-300
+                                                        bg-white px-2 py-1 text-sm text-slate-700
+                                                        focus:outline-none focus:ring-2 focus:ring-blue-500
+                                                        dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200
+                                                      "
+                                                    />
+                                                  )}
+                                                </td>
                                             </tr>
                                             <tr className = "hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                                                 <td className="py-3 px-4 text-sm text-slate-700 dark:text-slate-200 font-medium dark:font-bold">Total Payment</td>
@@ -283,7 +529,7 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
 
                         {/* Action Buttons */}
                         <div className="pt-4 flex justify-end space-x-3">
-                            <button type="button" onClick={onClose} className="cursor-pointer px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
+                            <button type="button" onClick={handleClose} className="cursor-pointer px-4 py-2 text-sm font-medium rounded-md text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                                 Cancel
                             </button>
                             <button type="submit" className="cursor-pointer px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors shadow-md">
@@ -298,8 +544,16 @@ function AddPurchaseOrderModal({ isOpen, onClose }) {
             <AddItemModal 
                 isOpen={isItemModalOpen} 
                 onClose={handleCloseItemModal} 
-                onAddItem={handleAddItem} 
+                onAddItem={handleAddLocalItem} 
+                loadItemList={itemList}
             />
+            <EditItemModal
+                isOpen={isEditItemModalOpen}
+                onClose={handleEditModal}
+                editingItem={editingItem}
+                onSaveLocalItem={handleSaveLocalItem}
+                loadItemList={itemList}
+                />
         </>
     );
 }

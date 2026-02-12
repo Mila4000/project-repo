@@ -1,9 +1,8 @@
 import React from 'react';
-import { Pencil, Trash2, ReceiptText } from 'lucide-react'; 
+import { Eye, Trash2, ReceiptText } from 'lucide-react'; 
 
-function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
+function SalesInvoiceTable({ orders, onEdit, onDelete,onView, onViewReceipt, customers }) {
     // NOTE: The static PurchasedOrders data is removed and now received via the 'orders' prop.
-    
     const getApprovalStatusColor = (approvalStatus) => {
         switch (approvalStatus) {
             case "Approved":
@@ -42,85 +41,133 @@ function SalesInvoiceTable({ orders, onEdit, onViewReceipt }) {
                 return "bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400";
         }
     };
-
+    const getCustomerById = (id) => {
+        return customers.find(customer => customer.id === id);
+    }
     return (
+      
         <div className="overflow-x-auto pb-6 mt-4">
           <table className="w-full">
             <thead>
                 <tr className = "bg-slate-200/50 dark:bg-slate-700/50">
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">PO No.</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Supplier</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Invoice No.</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Customer</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Transaction Date</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Date</th>
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total(in ₱)</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Approval Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Delivery Status</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Payment Status</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Remarks</th> 
+                    <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">	Quantity</th> 
                     <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => {
-                    return (
-                      <tr key={order.PO} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="p-4" key={index}>
+                  {orders.length > 0 ? (
+                    orders.map((order, index) => (
+                      <tr
+                        key={order.id}
+                        className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
+                      >
+                        <td className="p-4">
                           <span className="text-sm font-medium text-blue-500">
-                            {order.PO}
+                            {order.si}
                           </span>
                         </td>
+
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.supplier}
+                            {getCustomerById(order.cust_id)?.name ?? "—"}
                           </span>
                         </td>
+
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.transactionDate}
+                            {order.transaction_date}
                           </span>
                         </td>
+
                         <td className="p-4">
                           <span className="text-sm text-slate-800 dark:text-white">
-                            {order.total} 
+                            {order.delivery_date}
                           </span>
                         </td>
+
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getApprovalStatusColor(order.approvalStatus)}`}> 
-                            {order.approvalStatus}
+                          <span className="text-sm text-slate-800 dark:text-white">
+                            ₱{Number(order.total).toFixed(2)} 
                           </span>
                         </td>
+
                         <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(order.deliveryStatus)}`}>
-                            {order.deliveryStatus}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(order.paymentStatus)}`}>
-                            {order.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="p-4"> 
-                            <span className="text-sm text-slate-800 dark:text-white">
-                                {order.remarks}
-                            </span>
-                        </td>
-                        <td className="p-4 flex items-center justify-center gap-3"> 
-                          <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
-                            onClick={() => onEdit(order)}
+                          <span
+                            className={`font-medium text-xs px-3 py-1 rounded-full ${getApprovalStatusColor(
+                              order.approval_status
+                            )}`}
                           >
-                            <Pencil className="w-5 h-5"/>
+                            {order.approval_status}
                           </span>
-                          <span className="text-sm text-blue-900 dark:text-blue-500 cursor-pointer"
+                        </td>
+
+                        <td className="p-4">
+                          <span
+                            className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(
+                              order.delivery_status
+                            )}`}
+                          >
+                            {order.delivery_status}
+                          </span>
+                        </td>
+
+                        <td className="p-4">
+                          <span
+                            className={`font-medium text-xs px-3 py-1 rounded-full ${getPaymentStatusColor(
+                              order.payment_status
+                            )}`}
+                          >
+                            {order.payment_status}
+                          </span>
+                        </td>
+
+                        <td className="p-4">
+                          <span className="text-sm text-slate-800 dark:text-white">
+                            {order.total_quantity} KG
+                          </span>
+                        </td>
+
+                        <td className="p-4 flex items-center justify-center gap-3">
+                          <span
+                            className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
+                            onClick={() => onView(order)}
+                          >
+                            <Eye className="w-5 h-5" />
+                          </span>
+                            {/* View Receipt – only if NOT Rejected */}
+                        {order.approval_status !== "Rejected" && (
+                          <span
+                            className="text-sm text-blue-900 dark:text-blue-500 cursor-pointer"
                             onClick={() => onViewReceipt(order)}
                           >
-                            <ReceiptText className="w-5 h-5"/>
-                          </span>
-                          <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer">
-                            <Trash2 className="w-5 h-5"/>
+                            <ReceiptText className="w-5 h-5" />
+                          </span>)}
+
+                          <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer"
+                          onClick={() => onDelete(order.si)}>
+                            <Trash2 className="w-5 h-5" />
                           </span>
                         </td>
                       </tr>
-                    );
-                  })}
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="10"
+                        className="p-4 text-center text-sm text-slate-600 dark:text-slate-300"
+                      >
+                        No sales found.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
             </table>
         </div>

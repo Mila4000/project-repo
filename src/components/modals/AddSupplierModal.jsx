@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react'; 
 
-function AddSupplierModal({ isOpen, onClose }) {
+function AddSupplierModal({ isOpen, onClose, onAddSupplier }) {
     if (!isOpen) return null;
 
     const [formValues, setFormValues] = useState({
@@ -24,13 +24,36 @@ function AddSupplierModal({ isOpen, onClose }) {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
-        console.log("New Supplier Data:", formValues);
-        
-        // Reset and close
-        setFormValues({ Name: '', businessName: '', Address: '', Email: '', ContactNo: '', tinNo: '', BankAcc: '' });
-        onClose();
+        const newSupplier = {
+            name: formValues.Name,
+            businessname: formValues.businessName,
+            address: formValues.Address,
+            email: formValues.Email,
+            contactno: formValues.ContactNo,
+            tinno: formValues.tinNo,
+            bankaccount: formValues.BankAcc,
+            status: "Active" 
+        };
+        try{
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/supplier`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(newSupplier),
+            });
+            if (!response.ok) {
+                throw new Error("Network response was not ok");
+            }
+            const savedSupplier = await response.json();
+            onAddSupplier(savedSupplier);
+            onClose();
+        }
+        catch(error){
+            console.error("Failed to add supplier", error);
+        }
     };
 
     return (
@@ -48,7 +71,7 @@ function AddSupplierModal({ isOpen, onClose }) {
                         </button>
                     </div>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleFormSubmit} className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         
                         <div>

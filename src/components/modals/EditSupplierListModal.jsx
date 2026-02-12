@@ -8,7 +8,7 @@ const statusOptions = [
 ];
 
 function EditSupplierListModal({ isOpen, onClose, supplierData, onSave }) {
-    const [formData, setFormData] = useState({});
+    const [formData, setFormData] = useState(supplierData || {});
 
     // Sync state when supplierData changes
     useEffect(() => {
@@ -19,7 +19,7 @@ function EditSupplierListModal({ isOpen, onClose, supplierData, onSave }) {
         }
     }, [supplierData]);
 
-    if (!isOpen) return null;
+    if (!isOpen || !supplierData) return null;
 
     // Smart handler: works for both standard inputs and Custom Selects
     const handleInputChange = (input) => {
@@ -62,36 +62,36 @@ function EditSupplierListModal({ isOpen, onClose, supplierData, onSave }) {
                 <form onSubmit={handleSubmit}>
                     <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Supplier Name</label>
-                            <input name="Name" value={formData.Name || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <label htmlFor="name" className="text-sm font-medium text-slate-700 dark:text-slate-300">Supplier Name</label>
+                            <input type="text" name="name" id="name" value={formData.name || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Business Name</label>
-                            <input name="businessName" value={formData.businessName || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <label htmlFor="businessname" className="text-sm font-medium text-slate-700 dark:text-slate-300">Business Name</label>
+                            <input type="text" name="businessname" id="businessname" value={formData.businessname || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact No.</label>
-                            <input name="ContactNo" value={formData.ContactNo || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <label htmlFor="contactno" className="text-sm font-medium text-slate-700 dark:text-slate-300">Contact No.</label>
+                            <input name="contactno" id="contactno" value={formData.contactno || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Bank Account No.</label>
-                            <input name="BankAcc" value={formData.BankAcc || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <label htmlFor="bankaccount" className="text-sm font-medium text-slate-700 dark:text-slate-300">Bank Account No.</label>
+                            <input name="bankaccount" id="bankaccount" value={formData.bankaccount || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">TIN No.</label>
-                            <input name="tinNo" value={formData.tinNo || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
+                            <label htmlFor="tinno" className="text-sm font-medium text-slate-700 dark:text-slate-300">TIN No.</label>
+                            <input name="tinno" id="tinno" value={formData.tinno || ''} onChange={handleInputChange} className="w-full mt-1 px-3 py-1.5 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-xs focus:outline-none focus:border-blue-500 text-slate-700 dark:text-slate-200" />
                         </div>
 
                         <div className = "mt-1">
                             <ModalCustomFormSelect
                                 label="Status"
-                                name="Status"
+                                name="status"
                                 options={statusOptions}
-                                currentValue={formData.Status}
+                                currentValue={formData.status}
                                 onSelect={handleInputChange}
                             />
                         </div>

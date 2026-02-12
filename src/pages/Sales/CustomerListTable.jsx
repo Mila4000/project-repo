@@ -1,7 +1,7 @@
 import React from 'react';
 import { Pencil, Trash2 } from 'lucide-react'; 
 
-function CustomerListTable({ orders, onEdit }) {
+function CustomerListTable({ orders, onEdit, onDelete }) {
     const getStatusColor = (Status) => {
         switch (Status) {
             case "Active":
@@ -36,47 +36,47 @@ function CustomerListTable({ orders, onEdit }) {
                         <tr key={index} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
                             <td className="p-4">
                                 <span className="text-sm font-medium text-blue-500">
-                                    {order.Name}
+                                    {order.name}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.FBName}
+                                    {order.facebook_name}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.businessName}
+                                    {order.business_name}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.Address}
+                                    {order.address}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.Email}
+                                    {order.email}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.ContactNo}
+                                    {order.contactno}
                                 </span>
                             </td>
                             <td className="p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.CustomerType}
+                                    {order.cus_type}
                                 </span>
                             </td>
                             <td className="w-52 p-4">
                                 <span className="text-sm text-slate-800 dark:text-white">
-                                    {order.BankAcc}
+                                    {order.bankaccount}
                                 </span>
                             </td>
                             <td className="w-40 p-4 text-left">
-                                <span className={`font-medium text-xs px-3 ml-[-8px] py-1 rounded-full ${getStatusColor(order.Status)}`}>
-                                    {order.Status}
+                                <span className={`font-medium text-xs px-3 ml-[-8px] py-1 rounded-full ${getStatusColor(order.status)}`}>
+                                    {order.status}
                                 </span>
                             </td>
                             <td className="p-4 flex items-center gap-3"> 
@@ -85,7 +85,8 @@ function CustomerListTable({ orders, onEdit }) {
                                 >
                                     <Pencil className="w-4 h-4"/>
                                 </span>
-                                <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer">
+                                <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer"
+                                    onClick={()=>onDelete(order.id)}>
                                     <Trash2 className="w-4 h-4"/>
                                 </span>
                             </td>

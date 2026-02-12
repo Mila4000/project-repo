@@ -9,22 +9,15 @@ import {
   BarChart
 } from "recharts";
 
-function RevenueChart() {
-
-  const data = [
-    { month: 'Jan', revenue: 45000, expenses: 32000 },
-    { month: 'Feb', revenue: 52000, expenses: 38000 },
-    { month: 'Mar', revenue: 48000, expenses: 35000 },
-    { month: 'Apr', revenue: 61000, expenses: 42000 },
-    { month: 'May', revenue: 55000, expenses: 40000 },
-    { month: 'Jun', revenue: 67000, expenses: 45000 },
-    { month: 'Jul', revenue: 72000, expenses: 48000 },
-    { month: 'Aug', revenue: 69000, expenses: 46000 },
-    { month: 'Sep', revenue: 78000, expenses: 52000 },
-    { month: 'Oct', revenue: 74000, expenses: 50000 },
-    { month: 'Nov', revenue: 82000, expenses: 55000 },
-    { month: 'Dec', revenue: 89000, expenses: 58000 },
-  ];
+function RevenueChart({revenueChartData}) {
+  const formatMoney = (value) => {
+    const num = Math.trunc(Number(value) * 100) / 100;
+    return `₱${num.toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  };
+  const data  = revenueChartData ?? [];
 
   return (
     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl rounded-b-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
@@ -42,7 +35,7 @@ function RevenueChart() {
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
               <div className="text-sm text-slate-600 dark:text-slate-400">
-                <span>Revenue</span>
+                <span>Sales</span>
               </div>
           </div>
 
@@ -80,7 +73,9 @@ function RevenueChart() {
                 fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                tickFormatter={(value) => `$${value / 1000}k`}
+                tickFormatter={(value) =>
+                  `₱${(Math.trunc(value * 100) / 100).toLocaleString()}`
+                }
               />
               <Tooltip
                 contentStyle={{
@@ -89,10 +84,10 @@ function RevenueChart() {
                   borderRadius: "12px",
                   boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
                 }}
-                formatter={(value) => [`$${value.toLocaleString()}`, ""]}
+                 formatter={(value) => [formatMoney(value), ""]} 
               />
               <Bar
-                dataKey="revenue"
+                dataKey="sales"
                 fill="url(#revenueGradient)"
                 radius={[4, 4, 0, 0]}
                 maxBarSize={40}

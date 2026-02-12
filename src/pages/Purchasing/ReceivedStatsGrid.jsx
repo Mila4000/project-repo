@@ -1,20 +1,22 @@
 import React from 'react'
 import {PackageCheck} from 'lucide-react';
-const stats = [
+
+
+function ReceivedStatsGrid( {stats}) {
+  if (!stats) return null;
+  const gridStats = [
   {
     title: "Total Received Items",
-    value: "4",
+    value: stats.totalReceivedItems,
     icon: PackageCheck,
     color: "from-green-500 to-teal-600",
     bgColor: "bg-emerald-100 dark:bg-emerald-900/20",
     textColor: "text-emerald-600 dark:text-emerald-400",
   }
 ];
-
-function ReceivedStatsGrid() {
   return (
     <div className = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8 text-black dark:text-white">
-        {stats.map((stats, index) => { 
+        {gridStats.map((stats, index) => { 
             return (
               <div className = "bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-200/50 dark:border-slate-700/50" key={index}>
                 <div className="flex items-start justify-between">

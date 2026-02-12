@@ -50,7 +50,6 @@ function AddStockTransferModal({ isOpen, onClose, itemOptions }) {
     
     const handleFormSubmit = (e) => {
         e.preventDefault();
-        console.log("Transfer Submission:", { ...formValues, items: shipmentItems });
         onClose();
     };
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { Pencil, Trash2 } from 'lucide-react'; 
+import { Eye,ReceiptText, Trash2 } from 'lucide-react'; 
 
-function PurchasedOrdersTable({ orders, onEdit }) {
+function ReceivedItemsTable({ orders, onView, onViewReceipt, onDelete }) {
     
     const getDeliveryStatusColor = (Status) => {
         switch (Status) {
@@ -26,72 +26,82 @@ function PurchasedOrdersTable({ orders, onEdit }) {
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Supplier</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Transaction Date</th>
                     <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Status</th>
-                    <th className="text-center p-4 px-2 text-sm font-semibold text-slate-600 dark:text-slate-200">Expected Quantity</th>
-                    <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actual Quantity</th>
-                    <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Total Kilo</th>
+                    <th className="text-center p-4 px-2 text-sm font-semibold text-slate-600 dark:text-slate-200">Expected Quantity(in kg)</th>
+                    <th className="text-center p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actual Quantity(in kg)</th>
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Remarks</th> 
                     <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                  {orders.map((order, index) => {
+                  {orders
+                .filter(order => order.delivery_status !== "Out for Delivery")
+                .map((order) => {
                     return (
-                      <tr key={order.PO} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
-                        <td className="p-4" key={index}>
+                      <tr key={order.id} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                        <td className="p-4">
                           <span className="text-sm font-medium text-blue-500">
-                            {   order.PO}
+                            {order.po_number}
                           </span>
                         </td>
+
                         <td className="p-4">
-                          <span className="text-sm text-slate-800 dark:text-white">
-                                {order.itemName}
-                          </span>
+                          <span className="text-sm text-slate-800 dark:text-white">{order.product_name}</span>
                         </td>
+
                         <td className="p-4">
-                          <span className="text-sm text-slate-800 dark:text-white">
-                                {order.supplier}
-                          </span>
+                          <span className="text-sm text-slate-800 dark:text-white">{order.supplier}</span>
                         </td>
+
                         <td className="p-4">
-                          <span className="text-sm text-slate-800 dark:text-white">
-                                {order.transactionDate}
-                          </span>
+                          <span className="text-sm text-slate-800 dark:text-white">{order.transaction_date}</span>
                         </td>
+
                         <td className="p-4 text-center">
-                          <span className={`font-medium text-xs px-3 py-1 rounded-full ${getDeliveryStatusColor(order.deliveryStatus)}`}> 
-                                {order.deliveryStatus} 
+                          <span className={`font-medium text-xs px-3 py-1 rounded-full 
+                            ${getDeliveryStatusColor(order.delivery_status)}`}
+                          >
+                            {order.delivery_status}
                           </span>
                         </td>
-                        <td className="p-4 text-center">
-                          <span className="text-sm text-slate-800 dark:text-white">
-                                {order.expectedQuantity}
-                          </span>
-                        </td>
+
                         <td className="p-4 text-center">
                           <span className="text-sm text-slate-800 dark:text-white">
-                                {order.actualQuantity}
+                            {order.expected_quantity}
                           </span>
                         </td>
+
                         <td className="p-4 text-center">
                           <span className="text-sm text-slate-800 dark:text-white">
-                                {order.totalKilo}
+                            {order.quantity}
                           </span>
                         </td>
-                        <td className="p-4"> 
-                            <span className="text-sm text-slate-800 dark:text-white">
-                                {order.remarks}
-                            </span>
+
+                        <td className="p-4">
+                          <span className="text-sm text-slate-800 dark:text-white"> 
+                            {order.remarks}
+                          </span>
                         </td>
                         <td className="p-4 flex items-center gap-3"> 
-                            <button 
-                                className="text-sm text-blue-800 dark:text-blue-400 hover:scale-110 transition-transform"
-                                onClick={() => onEdit(order)}
+                             {/* View */}
+                            <span
+                              className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
+                              onClick={() => onView(order)}
                             >
-                                <Pencil className="w-4 h-4"/>
-                            </button>
+                              <Eye className="w-4 h-4" />
+                            </span>
+
+                            {/* View Receipt – only if NOT Rejected */}
+                            {order.approval_status !== "Rejected" && (
+                              <span
+                                className="text-sm text-blue-900 dark:text-blue-500 cursor-pointer"
+                                onClick={() => onViewReceipt(order)}
+                              >
+                                <ReceiptText className="w-5 h-5" />
+                              </span>
+                            )}
                             <button 
                                 className="text-sm text-red-800 dark:text-red-400 hover:scale-110 transition-transform"
-                                title="Delete Supplier"
+                                title="Delete Supplier" onClick={() => onDelete(order.id)}
                             >
                                 <Trash2 className="w-4 h-4"/>
                             </button>
@@ -105,4 +115,4 @@ function PurchasedOrdersTable({ orders, onEdit }) {
     );
 }
 
-export default PurchasedOrdersTable;
+export default ReceivedItemsTable;
