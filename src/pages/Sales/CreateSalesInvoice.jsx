@@ -219,7 +219,13 @@ function CreateSalesInvoice() {
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
     const extractUniqueOptions = (key, placeholder) => {
-      const uniqueValues = [...new Set(orders.map(order => order[key]))];
+      const uniqueValues = [
+        ...new Set(
+            orders
+                .map(o => key.split('.').reduce((acc, k) => acc?.[k], o))
+                .filter(Boolean)
+        )
+      ];
       return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
     };
     const fetchStats = async () => {
@@ -287,15 +293,15 @@ function CreateSalesInvoice() {
     
     const dateRangeOptions = ['Date Range', ALL_OPTION, 'Today', 'Last 7 Days', 'Last 30 Days'];
     
-    const supplierOptions = extractUniqueOptions('supplier', 'Supplier');
-    const deliveryOptions = extractUniqueOptions('deliveryStatus', 'Delivery Status');
-    const paymentOptions = extractUniqueOptions('paymentStatus', 'Payment Status');
-    const approvalOptions = extractUniqueOptions('approvalStatus', 'Approval Status'); // NEW OPTIONS
+    const customerOptions = extractUniqueOptions('customer.name', 'Customer');
+    const deliveryOptions = extractUniqueOptions('delivery_status', 'Delivery Status');
+    const paymentOptions = extractUniqueOptions('payment_status', 'Payment Status');
+    const approvalOptions = extractUniqueOptions('approval_status', 'Approval Status'); // NEW OPTIONS
 
     //the placeholder
     const initialRowLimit = rowLimitOptions[0];
     const initialDateRange = dateRangeOptions[0];
-    const initialSupplier = supplierOptions[0];
+    const initialCustomer = customerOptions[0];
     const initialDeliveryStatus = deliveryOptions[0];
     const initialPaymentStatus = paymentOptions[0];
     const initialApprovalStatus = approvalOptions[0]; // NEW INITIAL STATE
@@ -304,7 +310,7 @@ function CreateSalesInvoice() {
     // --- STATE MANAGEMENT ---
     const [rowLimit, setRowLimit] = useState(initialRowLimit);
     const [dateRangeFilter, setDateRangeFilter] = useState(initialDateRange);
-    const [supplierFilter, setSupplierFilter] = useState(initialSupplier);
+    const [customerFilter, setCustomerFilter] = useState(initialCustomer);
     const [deliveryStatusFilter, setDeliveryStatusFilter] = useState(initialDeliveryStatus);
     const [paymentStatusFilter, setPaymentStatusFilter] = useState(initialPaymentStatus);
     const [approvalStatusFilter, setApprovalStatusFilter] = useState(initialApprovalStatus); // NEW STATE
@@ -321,8 +327,8 @@ function CreateSalesInvoice() {
       setCurrentPage(1);
     };
 
-    const handleSupplierChange = (newValue) => {
-      setSupplierFilter(newValue);
+    const handleCustomerChange = (newValue) => {
+      setCustomerFilter(newValue);
       setCurrentPage(1);
     };
 
@@ -408,28 +414,30 @@ function CreateSalesInvoice() {
         );
       }
 
-      // Supplier Filter
-      if (supplierFilter !== initialSupplier && supplierFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.supplier === supplierFilter);
+      // Customer Filter
+      if (customerFilter !== initialCustomer && customerFilter !== ALL_OPTION) {
+        filtered = filtered.filter(order => {
+          return order.customer?.name === customerFilter;
+        });
       }
 
       // Approval Status Filter (NEW FILTER LOGIC)
       if (approvalStatusFilter !== initialApprovalStatus && approvalStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.approvalStatus === approvalStatusFilter);
+          filtered = filtered.filter(order => order.approval_status  === approvalStatusFilter);
       }
 
       // Delivery Status Filter
       if (deliveryStatusFilter !== initialDeliveryStatus && deliveryStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.deliveryStatus === deliveryStatusFilter);
+          filtered = filtered.filter(order => order.delivery_status  === deliveryStatusFilter);
       }
 
       // Payment Status Filter
       if (paymentStatusFilter !== initialPaymentStatus && paymentStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.paymentStatus === paymentStatusFilter);
+          filtered = filtered.filter(order => order.payment_status  === paymentStatusFilter);
       }
         
         return filtered;
-    }, [orders, dateRangeFilter, supplierFilter, approvalStatusFilter, deliveryStatusFilter, paymentStatusFilter, initialDateRange, initialSupplier, initialApprovalStatus, initialDeliveryStatus, initialPaymentStatus]); 
+    }, [orders, dateRangeFilter, customerFilter, approvalStatusFilter, deliveryStatusFilter, paymentStatusFilter, initialDateRange, initialCustomer, initialApprovalStatus, initialDeliveryStatus, initialPaymentStatus]); 
 
     // --- Pagination Logic ---
     const totalOrders = filteredOrders.length;
@@ -457,19 +465,19 @@ function CreateSalesInvoice() {
         
         <SalesInvoiceTableHeader
           dateRangeOptions={dateRangeOptions}
-          supplierOptions={supplierOptions}
+          customerOptions={customerOptions}
           deliveryOptions={deliveryOptions}
           paymentOptions={paymentOptions}
           approvalOptions={approvalOptions} // PASS NEW OPTIONS
           
           currentDateRange={dateRangeFilter}
-          currentSupplier={supplierFilter}
+          currentCustomer={customerFilter}
           currentDeliveryStatus={deliveryStatusFilter}
           currentPaymentStatus={paymentStatusFilter}
           currentApprovalStatus={approvalStatusFilter} // PASS NEW STATE
 
           handleDateRangeChange={handleDateRangeChange}
-          handleSupplierChange={handleSupplierChange}
+          handleCustomerChange={handleCustomerChange}
           handleDeliveryChange={handleDeliveryChange}
           handlePaymentChange={handlePaymentChange}
           handleApprovalChange={handleApprovalChange} // PASS NEW HANDLER

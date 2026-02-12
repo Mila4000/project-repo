@@ -5,6 +5,7 @@ import AddItemModal from './AddItemModal';
 import { fetchSIPreview  } from "../../utils/previewOrder";
 import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
 import { uploadComputation,uploadProofOfPayment } from '../../utils/storageHelpers';
+import AddCustomerModal from '../../components/modals/AddCustomerModal';
 
 const CustomerData = [
     { customer: 'Sarah Jane' },
@@ -21,7 +22,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
     const [customers, setCustomers] = useState([]);
     const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     // File upload state and handler
     const [receiptFile, setReceiptFile] = useState(null);
     const [receiptFileName, setReceiptFileName] = useState('No file chosen');
@@ -53,7 +54,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
         }
         };
         fetchCustomers();
-    }, []);
+    }, [isAddModalOpen]);
 
     useEffect(() => {
     if (!isOpen) return;
@@ -85,7 +86,10 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
             [name]: value
         }));
     };
-    
+    // Handler to open the Add Customer modal
+    const handleOpenCustomerModal = () => setIsAddModalOpen(true);
+    // Handler to close the Add Customer modal
+    const handleCloseCustomerModal = () => setIsAddModalOpen(false);
     // Handler to open the Add Item modal
     const handleOpenItemModal = () => setIsItemModalOpen(true);
     // Handler to close the Add Item modal
@@ -335,7 +339,12 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                                 onSelect={handleCustomerSelect}
                                 placeholder={loadingCustomers ? "Loading customer..." : "Select Customer"}
                             />
-
+                            <button className="cursor-pointer flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg hover:shadow-lg transition-all"
+                            onClick={handleOpenCustomerModal} type="button"
+                            >
+                                <Plus className="w-4 h-4" />
+                                <span className="text-sm font-medium">Add Customer</span>
+                            </button>
                             <div> 
                                 <label htmlFor="transaction_date" 
                                 className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
@@ -553,6 +562,10 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                 onClose={handleCloseItemModal} 
                 onAddItem={handleAddItem} 
                 loadItemList={itemList}
+            />
+            <AddCustomerModal
+                isOpen={isAddModalOpen} 
+                onClose={handleCloseCustomerModal} 
             />
         </>
     );
