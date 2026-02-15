@@ -164,7 +164,7 @@ function CustomerList() {
     const [stats,setStats] = useState([]);
     const fetchCustomers = async () => {
       try {
-        const res = await fetch('${import.meta.env.VITE_API_URL}/api/customers');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers`);
         const data = await res.json();
         setOrders(data);
       } catch (error) {
