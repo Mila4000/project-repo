@@ -23,7 +23,6 @@
         discount: 0,
         total: 0,
         });
-                console.log("Editing Item:", editingItem);
         /* =======================
         AUTO TOTAL CALCULATION
         ======================= */
@@ -138,9 +137,6 @@
         if (!isOpen) return null;
 
 
-        console.log("Load Item List:", loadItemList);
-        console.log("Selected Item:", selectedItem);
-        console.log("Item Form State:", itemForm);
         return (
             <div className="fixed inset-0 bg-black/50 dark:bg-black/70 z-50 flex items-center justify-center">
                 <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-2xl w-full max-w-lg mx-4" onClick={e => e.stopPropagation()}>

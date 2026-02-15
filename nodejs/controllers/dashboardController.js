@@ -36,9 +36,9 @@ export const getRevenueChartTable= async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch customers' });
     }
 };
-export const getClientSupplierBalanceChart = async (req, res) => {
+export const getSalesPurchaseCountsChart = async (req, res) => {
     try {
-        const balances = await dashboardService.getClientSupplierBalance();
+        const balances = await dashboardService.getSalesPurchaseCounts();
         res.status(200).json(balances);
     } catch (error) {
         res.status(500).json({ error: 'Failed to fetch customers' });

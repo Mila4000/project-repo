@@ -1,4 +1,4 @@
-import "./App.css";
+
 import { Routes, Route } from "react-router-dom";
 import MainLayout from "./components/layout/MainLayout";
 
@@ -17,7 +17,7 @@ import CustomerList from "./pages/Sales/CustomerList";
 // Inventory
 import StockManagement from "./pages/Inventory/StockManagement";
 import InventoryCounting from "./pages/Inventory/InventoryCounting";
-
+import BrandList from "./pages/Inventory/BrandList";
 // Others
 import Reports from "./pages/Reports";
 import Warehouse from "./pages/Warehouse";
@@ -43,6 +43,7 @@ function App() {
         {/* Inventory */}
         <Route path="inventory/stockManagement" element={<StockManagement />} />
         <Route path="inventory/inventoryCounting" element={<InventoryCounting />} />
+        <Route path="inventory/brandList" element={<BrandList />} />
 
         {/* Single Pages */}
         <Route path="reports" element={<Reports />} />

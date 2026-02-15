@@ -49,3 +49,21 @@ export const getCountingStats = async () => {
   if (error) throw error;
   return count;
 };
+
+export const getBrands = async () => {
+  const { data, error } = await supabase
+    .from('brand_list')
+    .select('*')
+    .order('id', { ascending: false });
+  
+  if (error) throw error;
+  return data;
+}
+
+export const getBrandStats = async () => {
+  const { count, error } = await supabase
+    .from('brand_list')
+    .select('*', { count: 'exact', head: true });
+  if (error) throw error;
+  return count;
+}

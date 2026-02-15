@@ -111,8 +111,8 @@ function CreatePurchase() {
     const closeModal = () => setIsModalOpen(false);
 
     const handleView = (order) => {
-    setDataView(order);
-    setIsEditModalOpen(true);
+        setDataView(order);
+        setIsEditModalOpen(true);
     };
     const openViewModal = (order) => {
         setDataView(order);
@@ -282,12 +282,12 @@ function CreatePurchase() {
     
 
     const handleDeletePurchase = async (po) => {
-    if (!confirm("Delete this purchase?")) return;
+    if (!confirm("Remove this transaction?")) return;
 
     try {
         const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/purchasing/${po}`,
-        { method: "DELETE" }
+        `${import.meta.env.VITE_API_URL}/api/purchasing/remove/${po}`,
+        { method: "POST" }
         );
 
         if (!res.ok) throw new Error("Delete failed");

@@ -33,13 +33,13 @@ export const createPurchase = async (req, res) => {
   }
 };
 
-export const deletePurchase = async (req, res) => {
+export const removePurchase = async (req, res) => {
   try {
-    await purchasingService.deletePurchase(req.params.po);
-    res.json({ message: "Purchase deleted" });
+    await purchasingService.removePurchase(req.params.po);
+    res.json({ message: "Purchase removed" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to delete purchase" });
+    res.status(500).json({ message: "Failed to remove purchase" });
   }
 };
 

@@ -17,7 +17,11 @@ const warehouseData = [
   { warehouse: "Meycuayan" },
   { warehouse: "Quezon City" },
 ];
-
+const TYPE_LABELS = {
+  UNPACK: "Trading Items",
+  VIP: "Commissary Items",
+  VACUUM: "Valuable Items",
+};
 /* -------------------------------------------------------------------------- */
 /*                             MAIN COMPONENT                                 */
 /* -------------------------------------------------------------------------- */
@@ -120,7 +124,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
     alert("Please complete all required fields.");
     return;
   }
-  console.log("purchaseItems on Submit:", purchaseItems);
   try {
     // 1️⃣ CREATE PURCHASE (NO RECEIPT YET)
     const newPurchase = {
@@ -149,7 +152,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
       payment_status: "Unpaid",
       remarks: formValues.remarks
     };
-    console.log("Submitting New Purchase:", newPurchase);
     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/purchasing`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -188,8 +190,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
   }
 };
     const handleAddLocalItem = (item) => {
-      console.log("Adding Local Item:", item);
-    const restructuredItem = {
+      const restructuredItem = {
         id: item.id,
         temp_id: crypto.randomUUID(), // Unique temp ID for local management
         product_name: item.brand,
@@ -243,6 +244,46 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
         discountSubtotal,
         totalPayment
     } = paymentTotals;
+
+  const handleBrandChange = (index, productId) => {
+    const selectedProduct = itemList.find(
+      (product) => product.id === Number(productId)
+    );
+
+    if (!selectedProduct) return;
+
+    const updatedItems = [...purchaseItems];
+
+    updatedItems[index] = {
+      ...updatedItems[index],
+
+      // 🔹 CORE FIELDS
+      id: selectedProduct.id,
+      product_name: selectedProduct.item_name,
+      type: selectedProduct.item_type,
+      unit_price: Number(selectedProduct.suggested_retail_price),
+
+      // 🔹 Reset quantity when brand changes
+      quantity: 1,
+
+      // 🔹 Recalculate line total
+      line_total:
+        1 * Number(selectedProduct.suggested_retail_price),
+    };
+
+    setPurchaseItems(updatedItems);
+  };
+  const handleQuantityChange = (index, value) => {
+    const updatedItems = [...purchaseItems];
+
+    const qty = Number(value);
+
+    updatedItems[index].quantity = qty;
+    updatedItems[index].line_total =
+      qty * Number(updatedItems[index].unit_price);
+
+    setPurchaseItems(updatedItems);
+  };
   /* ----------------------------- EFFECTS --------------------------------- */
 
   useEffect(() => {
@@ -273,7 +314,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
 
     loadPreview();
   }, [isOpen, formValues.transaction_date]);
-  
   /* ----------------------------- GUARD ----------------------------------- */
 
   if (!isOpen) return null;
@@ -377,7 +417,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
                                     onClick={handleOpenItemModal} // <-- NEW HANDLER
                                     className="flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg cursor-pointer hover:shadow-lg transition-all">
                                     <Plus className="w-4 h-4" />
-                                    <span className="text-sm font-medium">Add Item</span>
+                                    <span className="text-sm font-medium">Add Brand</span>
                                 </button>
                             </div>
                             <table className="w-full">
@@ -398,11 +438,33 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
                                             <tr 
                                                 key={item.id} 
                                                 className = "border-b border-slate-300 dark:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
-                                            >
-                                              {console.log("Rendering Item:", item)}
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.product_name}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.type}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.quantity}</td>
+                                            > 
+                                                <td className="p-4">
+                                                  <select
+                                                    value={item.id || ""}
+                                                    onChange={(e) => handleBrandChange(index, e.target.value)}
+                                                    className="w-full px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                                                  >
+                                                    <option value="">Select Brand</option>
+                                                    {itemList.map((product) => (
+                                                      <option key={product.id} value={product.id}>
+                                                        {product.item_name}
+                                                      </option>
+                                                    ))}
+                                                  </select>
+                                                </td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  {TYPE_LABELS[item.type] || item.type || "N/A"}
+                                                </td>
+                                                <td className="p-4">
+                                                  <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => handleQuantityChange(index, e.target.value)}
+                                                    className="w-24 px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                                                  />
+                                                </td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
                                                   ₱{Number(item.unit_price).toFixed(2)}
                                                 </td>
@@ -410,14 +472,6 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
                                                   ₱{Number(item.line_total).toFixed(2)}
                                                 </td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
-                                                    <button 
-                                                        type="button" 
-                                                        onClick={() => handleEditItem(item)}
-                                                        className="text-blue-500 hover:text-blue-700 p-1 rounded transition-colors cursor-pointer"
-                                                        aria-label={`Edit item ${item.brand}`}
-                                                    >
-                                                        <Pencil className="w-4 h-4" />
-                                                    </button>
                                                     <button 
                                                         type="button" 
                                                         onClick={() => handleRemoveItem(item.temp_id)}
@@ -546,6 +600,7 @@ function AddPurchaseOrderModal({ isOpen, onClose, onAddPurchase, itemList}) {
                 onClose={handleCloseItemModal} 
                 onAddItem={handleAddLocalItem} 
                 loadItemList={itemList}
+                type="Brand"
             />
             <EditItemModal
                 isOpen={isEditItemModalOpen}

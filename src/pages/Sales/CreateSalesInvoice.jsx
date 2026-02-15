@@ -220,12 +220,13 @@ function CreateSalesInvoice() {
 
     const extractUniqueOptions = (key, placeholder) => {
       const uniqueValues = [
-        ...new Set(
-            orders
-                .map(o => key.split('.').reduce((acc, k) => acc?.[k], o))
-                .filter(Boolean)
-        )
+          ...new Set(
+              orders
+                  .map(o => key.split('.').reduce((acc, k) => acc?.[k], o))
+                  .filter(Boolean)
+          )
       ];
+
       return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
     };
     const fetchStats = async () => {
@@ -315,7 +316,6 @@ function CreateSalesInvoice() {
     const [paymentStatusFilter, setPaymentStatusFilter] = useState(initialPaymentStatus);
     const [approvalStatusFilter, setApprovalStatusFilter] = useState(initialApprovalStatus); // NEW STATE
     const [currentPage, setCurrentPage] = useState(1);
-
     // --- HANDLER FUNCTIONS ---
     const handleRowLimitChange = (newValue) => {
       setRowLimit(parseInt(newValue));
@@ -368,21 +368,20 @@ function CreateSalesInvoice() {
     fetchBrands();
     fetchStats();
     };
-
     const handleDeleteSalesInvoice = async (si) => {
-      if (!confirm("Delete this sale invoice?")) return;
+      if (!confirm("Remove this sale invoice?")) return;
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice/${si}`, {
-          method: 'DELETE',
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sales-invoice/remove/${si}`, {
+          method: 'POST',
         });
-        if (!response.ok) throw new Error("Delete failed");
+        if (!response.ok) throw new Error("Remove failed");
 
         fetchStats();
         fetchInvoice();
         fetchCustomers();
         fetchBrands();
       } catch (error) {
-        console.error('Failed to delete sales invoice:', error);
+        console.error('Failed to remove sales invoice:', error);
       }
     };
     // --- FILTERING LOGIC ---
@@ -423,17 +422,17 @@ function CreateSalesInvoice() {
 
       // Approval Status Filter (NEW FILTER LOGIC)
       if (approvalStatusFilter !== initialApprovalStatus && approvalStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.approval_status  === approvalStatusFilter);
+          filtered = filtered.filter(order => order.approval_status === approvalStatusFilter);
       }
 
       // Delivery Status Filter
       if (deliveryStatusFilter !== initialDeliveryStatus && deliveryStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.delivery_status  === deliveryStatusFilter);
+          filtered = filtered.filter(order => order.delivery_status === deliveryStatusFilter);
       }
 
       // Payment Status Filter
       if (paymentStatusFilter !== initialPaymentStatus && paymentStatusFilter !== ALL_OPTION) {
-          filtered = filtered.filter(order => order.payment_status  === paymentStatusFilter);
+          filtered = filtered.filter(order => order.payment_status === paymentStatusFilter);
       }
         
         return filtered;
@@ -457,7 +456,6 @@ function CreateSalesInvoice() {
       fetchStats();
       }
     }, [isEditModalOpen, isViewModalOpen, isModalOpen]);
-
   return (
     <div>
       <SalesInvoiceStatsGrid stats={stats} />

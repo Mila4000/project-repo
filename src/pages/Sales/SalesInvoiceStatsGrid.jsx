@@ -5,7 +5,7 @@ import { DollarSign, Scale, Wallet, Truck} from 'lucide-react';
 
 function SalesInvoiceStatsGrid( {stats}) {
    if (!stats) return null;
-  
+    console.log(stats);
     const gridStats = [
       {
         title: "Total Receivables (in ₱)",

@@ -106,7 +106,6 @@ function DeliveryStatusModal({
                             >
                                 <option>Order Placed</option>
                                 <option>Out for Delivery</option>
-                                <option>Delivered</option>
                             </select>
                         </div>
 

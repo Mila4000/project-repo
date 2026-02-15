@@ -21,6 +21,7 @@ export const getAllReceivedItems = async () => {
         delivery_status,
         remarks,
         approval_status,
+        transaction_status,
         supplier (
           id,
           businessname,
@@ -29,7 +30,9 @@ export const getAllReceivedItems = async () => {
         )
       )
     `)
-    .eq("purchased_order.approval_status", "Approved");
+    .eq("purchased_order.approval_status", "Approved")
+    .eq("purchased_order.transaction_status", "Active")
+    .neq("purchased_order.delivery_status", "Order Placed");
   if (error) throw error;
   return data;
 };
@@ -97,21 +100,19 @@ export const createReceivedItem = async (payload) => {
 };
 
 export const updateReceivedItem = async (id, payload) => {
-
-  const updateData = {
-    product_name: payload.product_name,
-    quantity: payload.quantity,
-    expected_quantity: payload.expected_quantity,
-  };
-
-  const { data, error } = await supabase
-    .from('purchased_order_item')
-    .update(updateData)
-    .eq('id', id)
-    .select();
+  const { data, error } = await supabase.rpc(
+    "update_received_item_and_po",
+    {
+      p_item_id: id,
+      p_product_name: payload.product_name,
+      p_quantity: payload.quantity,
+      p_expected_quantity: payload.expected_quantity,
+    }
+  );
 
   if (error) throw error;
-  return data;
+  console.log(data);
+  return data; 
 };
 
 export const deleteReceivedItem = async (id) => {
@@ -124,24 +125,49 @@ export const deleteReceivedItem = async (id) => {
 };
 
 export const getReceivedItemsStats = async () => {
-  const { count, error } = await supabase
+  // 1️⃣ Count of received items
+  const { count: receivedItemCount, error } = await supabase
     .from("purchased_order_item")
     .select(
       `
       id,
       purchased_order!inner (
-        approval_status
+        approval_status,
+        delivery_status
       )
       `,
       { count: "exact", head: true }
     )
     .eq("purchased_order.approval_status", "Approved")
-    .neq("purchased_order.delivery_status", "Out for Delivery");
+    .eq("purchased_order.transaction_status", "Active")
+    .neq("purchased_order.delivery_status", "Order Placed");
 
   if (error) throw error;
 
+  // 2️⃣ SUM of quantity
+  const { data, error: quantityError } = await supabase
+    .from("purchased_order_item")
+    .select(
+      `
+      quantity,
+      purchased_order!inner (
+        approval_status,
+        delivery_status
+      )
+      `
+    )
+    .eq("purchased_order.approval_status", "Approved")
+    .eq("purchased_order.transaction_status", "Active")
+    .neq("purchased_order.delivery_status", "Order Placed");
+
+  if (quantityError) throw quantityError;
+
+  const totalQuantity =
+    data?.reduce((sum, item) => sum + Number(item.quantity), 0) ?? 0;
+
   return {
-    totalReceivedItems: count ?? 0,
+    totalReceivedItems: receivedItemCount ?? 0,
+    totalQuantity,
   };
 };
 
@@ -304,6 +330,7 @@ export const bulkSave = async (items, transaction) => {
       .from("sales_invoice")
       .select("shipping_subtotal, discount_subtotal")
       .eq("id", salesInvoiceId)
+      .eq("transaction_status","Active")
       .single();
     if (invoiceError) throw invoiceError;
     const shippingSubtotal = Number(invoice.shipping_subtotal || 0);
@@ -318,8 +345,29 @@ export const bulkSave = async (items, transaction) => {
         merchandise_subtotal: merchandiseSubtotal,
         total: total
       })
+      .eq("transaction_status","Active")
       .eq("id", salesInvoiceId);
     if (updateError) throw updateError;
   }
     
+};
+
+export const markAsDelivered = async (purchasedOrderId) => {
+  console.log('Service received ID:', purchasedOrderId);
+
+  const { data, error } = await supabase
+    .from('purchased_order')
+    .update({
+      delivery_status: 'Delivered'
+    })
+    .eq('id', purchasedOrderId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Supabase Update Error:', error);
+    throw error;
+  }
+
+  return data;
 };
