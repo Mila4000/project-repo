@@ -114,7 +114,7 @@ function StockManagement() {
         };
 
     // ------------------------------------------------------------------------------------------ //
-
+        
     return (
         <div>
             <StockStatsGrid stats={stats}/>

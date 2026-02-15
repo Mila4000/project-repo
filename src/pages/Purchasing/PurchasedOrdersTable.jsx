@@ -19,6 +19,8 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
         switch (delivery_status) {
             case "Delivered":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+            case "Received":
+                return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Out for Delivery":
                 return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
             case "Order Placed":
@@ -68,7 +70,9 @@ function PurchasedOrdersTable({ orders, onViewReceipt, onDelete ,suppliers, onVi
                     // If rejected or already delivered → normal label
                     if (
                       order.approval_status === "Rejected" ||
-                      order.delivery_status === "Delivered" ||
+                      order.delivery_status === "Delivered" || 
+                      order.delivery_status === "Received" || 
+                      order.delivery_status === "Out for Delivery" || 
                       !order.delivery_date
                     ) {
                       return {

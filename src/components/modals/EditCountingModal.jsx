@@ -90,7 +90,7 @@ function EditCountingModal({ isOpen, onClose, initialData }) {
         
         // try {
         //     const response = await fetch(
-        //         "http://localhost:5000/api/inventory",
+        //         "${import.meta.env.VITE_API_URL}/api/inventory",
         //         {
         //         method: "POST",
         //         headers: { "Content-Type": "application/json" },

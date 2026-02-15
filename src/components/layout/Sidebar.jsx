@@ -48,6 +48,7 @@ const menuItems = [
     label: "Inventory",
     count: "67",
     submenu: [
+      {id: "brandList", label: "Brand List"},
       {id: "stockManagement", label: "Item List"},
       {id: "inventoryCounting", label: "Inventory Counting"}
     ]

@@ -10,6 +10,7 @@ export const getAllStockItems = async () => {
         quantity,
         threshold_count,
         suggested_retail_price,
+        selling_price,
         status,
         item_code,
         warehouse(

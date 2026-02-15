@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 import {
   Bar,
   XAxis,
@@ -6,10 +6,10 @@ import {
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
-  BarChart
+  BarChart,
 } from "recharts";
 
-function RevenueChart({revenueChartData}) {
+function RevenueChart({ revenueChartData }) {
   const formatMoney = (value) => {
     const num = Math.trunc(Number(value) * 100) / 100;
     return `₱${num.toLocaleString("en-PH", {
@@ -17,103 +17,126 @@ function RevenueChart({revenueChartData}) {
       maximumFractionDigits: 2,
     })}`;
   };
-  const data  = revenueChartData ?? [];
+
+  const data = revenueChartData ?? [];
 
   return (
     <div className="bg-white dark:bg-slate-900/80 backdrop-blur-xl rounded-b-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
+      
+      {/* HEADER */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h3 className="text-xl font-bold text-slate-800 dark:text-white">
-            Revenue Chart
+            Revenue Breakdown
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            Monthly Revenue and Expenses
+            Monthly Sales (COGS + Profit)
           </p>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-6">
+
+          {/* Profit Legend */}
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                <span>Sales</span>
-              </div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">
+              Profit
+            </span>
           </div>
 
+          {/* COGS Legend */}
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-gradient-to-r from-slate-400 to-slate-500 rounded-full"></div>
-              <div className="text-sm text-slate-600 dark:text-slate-400">
-                <span>Expenses</span>
-              </div>
+            <span className="text-sm text-slate-600 dark:text-slate-400">
+              COGS
+            </span>
           </div>
+
         </div>
       </div>
 
-        <div className="h-80">
-          {" "}
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={data}
-              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-            >
-              <CartesianGrid 
-                strokeDasharray="3 3" 
-                stroke="e2e8f0"
-                opacity={0.3}
-              />
+      {/* CHART */}
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            data={data}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="#e2e8f0"
+              opacity={0.3}
+            />
 
-              <XAxis 
-                dataKey="month" 
-                stroke="#64748b"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis 
-                stroke="#64748b"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) =>
-                  `₱${(Math.trunc(value * 100) / 100).toLocaleString()}`
-                }
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "rgba(0, 0, 0, 0.1)",
-                  border: "none",
-                  borderRadius: "12px",
-                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-                }}
-                 formatter={(value) => [formatMoney(value), ""]} 
-              />
-              <Bar
-                dataKey="sales"
-                fill="url(#revenueGradient)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-              <Bar
-                dataKey="expenses"
-                fill="url(#expensesGradient)"
-                radius={[4, 4, 0, 0]}
-                maxBarSize={40}
-              />
-              <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#3b82f6"/>
-                  <stop offset="100%" stopColor="#8b5cf6"/>
-                </linearGradient>
-                <linearGradient id="expensesGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#94a3b8"/>
-                  <stop offset="100%" stopColor="#64748b"/>
-                </linearGradient>
-              </defs>
-            </BarChart>
-          </ResponsiveContainer>
-          </div>
+            <XAxis
+              dataKey="month"
+              stroke="#64748b"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+            />
 
+            <YAxis
+              stroke="#64748b"
+              fontSize={12}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value) =>
+                `₱${(Math.trunc(value * 100) / 100).toLocaleString()}`
+              }
+            />
+
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "rgba(230, 236, 250, 0.9)",
+                border: "none",
+                borderRadius: "12px",
+                boxShadow: "0 10px 40px rgba(235, 227, 227, 0.3)",
+              }}
+              formatter={(value, name, props) => {
+                if (name === "profit") return [formatMoney(value), "Profit"];
+                if (name === "cogs") return [formatMoney(value), "COGS"];
+              }}
+              labelFormatter={(label, payload) => {
+                if (!payload || !payload.length) return label;
+                const revenue =
+                  Number(payload[0].payload.revenue ?? 0);
+                return `${label} — Revenue: ${formatMoney(revenue)}`;
+              }}
+            />
+
+            {/* COGS (Bottom of Stack) */}
+            <Bar
+              dataKey="cogs"
+              stackId="sales"
+              fill="url(#cogsGradient)"
+              radius={[0, 0, 0, 0]}
+            />
+
+            {/* PROFIT (Top of Stack) */}
+            <Bar
+              dataKey="profit"
+              stackId="sales"
+              fill="url(#profitGradient)"
+              radius={[6, 6, 0, 0]}
+            />
+
+            <defs>
+              <linearGradient id="profitGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#3b82f6" />
+                <stop offset="100%" stopColor="#8b5cf6" />
+              </linearGradient>
+
+              <linearGradient id="cogsGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#94a3b8" />
+                <stop offset="100%" stopColor="#64748b" />
+              </linearGradient>
+            </defs>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
     </div>
-  )
+  );
 }
 
-export default RevenueChart
+export default RevenueChart;

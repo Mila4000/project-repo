@@ -5,14 +5,18 @@ import AddItemModal from './AddItemModal';
 import { fetchSIPreview  } from "../../utils/previewOrder";
 import { calculatePurchaseTotals } from "../../utils/paymentCalculator";
 import { uploadComputation,uploadProofOfPayment } from '../../utils/storageHelpers';
-import AddCustomerModal from '../../components/modals/AddCustomerModal';
+import AddCustomerModal from './AddCustomerModal';
 
 const CustomerData = [
     { customer: 'Sarah Jane' },
     { customer: 'Joseph Karl' },
     { customer: 'Junnie B. Oy' }
 ];
-
+const TYPE_LABELS = {
+  UNPACK: "Trading Items",
+  VIP: "Commissary Items",
+  VACUUM: "Valuable Items",
+};
 
 function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
     const getToday = () => {
@@ -23,6 +27,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
     const [loadingCustomers, setLoadingCustomers] = useState(false);
     const [isItemModalOpen, setIsItemModalOpen] = useState(false);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [selectKey, setSelectKey] = useState(0);
     // File upload state and handler
     const [receiptFile, setReceiptFile] = useState(null);
     const [receiptFileName, setReceiptFileName] = useState('No file chosen');
@@ -38,13 +43,13 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
         contactno: '',       
         address: '',    
     });
-    useEffect(() => {
     const fetchCustomers = async () => {
         try {
             setLoadingCustomers(true);
 
-            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers`); // <-- your endpoint
+            const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers`);
             const data = await res.json();
+
             setCustomers(data);
 
         } catch (error) {
@@ -52,9 +57,11 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
         } finally {
             setLoadingCustomers(false);
         }
-        };
+    };
+    useEffect(() => {
         fetchCustomers();
-    }, [isAddModalOpen]);
+    }, []);
+
 
     useEffect(() => {
     if (!isOpen) return;
@@ -78,7 +85,6 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
         totalPayment
     } = paymentTotals;
 
-
     // --- Handlers ---
     const handleInputChange = (value, name) => {
         setFormValues(prev => ({
@@ -99,7 +105,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
     const handleAddItem = (newItem) => {
         setPurchaseItems((prev) => [
         ...prev,
-        { ...newItem },
+        { ...newItem},
         ]);
         handleCloseItemModal();
     };
@@ -127,10 +133,10 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
               transaction_date: new Date(formValues.transaction_date).toISOString(),
               items: purchaseItems.map(item => ({
                 id: item.id,
-                name: item.brand,
+                name: item.product_name,
                 type: item.type,
                 quantity: Number(item.quantity),
-                unitPrice: Number(item.unitPrice),
+                unitPrice: Number(item.unit_price),
                 discount:Number(item.discount),
                 shipping:Number(item.shipping),
         
@@ -172,7 +178,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
             onAddSales(savedSales);
             handleClose();
         
-          } catch (err) {
+          }catch (err) {
             console.error("sales submission error:", err);
 
             alert(
@@ -220,31 +226,121 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
             setReceiptFileName("No file chosen");
         }
     };
+    const ADD_NEW_CUSTOMER = "__add_new_customer__";
 
 
     // --- Data Transformation ---
-    const customerOptions = customers.map(c => ({
-        value: c.id ?? c.id,
-        label: c.customer ?? c.name,
-    }));
+    const customerOptions = [
+        ...customers.map(c => ({
+            value: c.id,
+            label: c.customer ?? c.name,
+        })),
+        {
+            value: ADD_NEW_CUSTOMER,
+            label: "➕ Add Customer"
+        }
+    ];
+    const handleAddLocalItem = (item) => {
+      const restructuredItem = {
+        id: item.id,
+        temp_id: crypto.randomUUID(), // Unique temp ID for local management
+        product_name: item.brand,
+        type: item.type,
+        quantity: Number(item.quantity),
+        unit_price: Number(item.unitPrice),
+        line_total:
+        Number(item.quantity) * Number(item.unitPrice),
+
+        // frontend-only fields (NOT sent to DB)
+        shipping: Number(item.shipping ?? 0),
+        discount: Number(item.discount ?? 0),
+    };
+
+
+    setPurchaseItems(prev => [
+        ...prev,
+        {
+        ...restructuredItem
+        }
+    ]);
+
+    handleCloseItemModal();
+    };
+    const handleItemChange = (index, productId) => {
+        const selectedProduct = itemList.find(
+        (product) => product.id === Number(productId)
+        );
+
+        if (!selectedProduct) return;
+
+        const updatedItems = [...purchaseItems];
+
+        updatedItems[index] = {
+        ...updatedItems[index],
+
+        // 🔹 CORE FIELDS
+        id: selectedProduct.id,
+        product_name: selectedProduct.item_name,
+        type: selectedProduct.item_type,
+        unit_price: Number(selectedProduct.selling_price),
+
+        // 🔹 Reset quantity when item changes
+        quantity: 1,
+
+        // 🔹 Recalculate line total
+        line_total:
+            1 * Number(selectedProduct.selling_price),
+        };
+
+        setPurchaseItems(updatedItems);
+    };
+        const handleQuantityChange = (index, value) => {
+            const updatedItems = [...purchaseItems];
+
+            const qty = Number(value);
+
+            updatedItems[index].quantity = qty;
+            updatedItems[index].line_total =
+            qty * Number(updatedItems[index].unit_price);
+
+            setPurchaseItems(updatedItems);
+    };
+    const handleUnitPriceChange = (index, value) => {
+        const updatedItems = [...purchaseItems];
+
+        const price = Number(value);
+
+        updatedItems[index].unit_price = price;
+        updatedItems[index].line_total =
+            Number(updatedItems[index].quantity) * price;
+
+        setPurchaseItems(updatedItems);
+    };
     const handleCustomerSelect = (selectedValue, name) => {
+
+        if (selectedValue === ADD_NEW_CUSTOMER) {
+            setSelectKey(prev => prev + 1); // force remount
+            handleOpenCustomerModal();
+            return;
+        }
+
         const selectedCustomer = customers.find(
-            c => c.id === selectedValue
+            c => String(c.id) === String(selectedValue)
         );
 
         setFormValues(prev => ({
             ...prev,
             customer: selectedValue,
             contactno: selectedCustomer?.contactno || '',
-            address: selectedCustomer?.address || '',   // ✅ auto-fill
+            address: selectedCustomer?.address || '',
         }));
     };
-    // LOGIC: Categorized Subtotals
+
+    // LOGIC: Categorized Subtotals (with shipping & discount)
     const subtotals = purchaseItems.reduce((acc, item) => {
-        const amount = parseFloat(item.total) || 0;
+        const amount = parseFloat(item.line_total) || 0;
         const shipping = parseFloat(item.shipping) || 0;
         const discount = parseFloat(item.discount) || 0;
-
         let category;
 
         if (item.type === 'UNPACK' || item.type === 'Trading Items') {
@@ -337,14 +433,8 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                                 options={customerOptions}
                                 initialValue={formValues.customer}
                                 onSelect={handleCustomerSelect}
-                                placeholder={loadingCustomers ? "Loading customer..." : "Select Customer"}
+                                highlightValues={[ADD_NEW_CUSTOMER]}
                             />
-                            <button className="cursor-pointer flex items-center space-x-2 py-2 px-4 bg-blue-500 text-white rounded-lg hover:shadow-lg transition-all"
-                            onClick={handleOpenCustomerModal} type="button"
-                            >
-                                <Plus className="w-4 h-4" />
-                                <span className="text-sm font-medium">Add Customer</span>
-                            </button>
                             <div> 
                                 <label htmlFor="transaction_date" 
                                 className="block text-sm font-medium text-slate-700 dark:text-slate-300"> 
@@ -403,7 +493,7 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                             <table className="w-full">
                                 <thead>
                                     <tr className = "bg-slate-200/50 dark:bg-slate-700/50">
-                                        <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Brand</th>
+                                        <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Item</th>
                                         <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Type</th>
                                         <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Quantity (KG)</th>
                                         <th className="text-left p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Unit Price</th>
@@ -419,11 +509,45 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
                                                 key={item.id} 
                                                 className = "border-b border-slate-300 dark:border-slate-600 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors"
                                             >
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.brand}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.type}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.quantity}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{item.unitPrice.toFixed(2)}</td>
-                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">{(item.total).toFixed(2)}</td>
+                                               <td className="p-4">
+                                                  <select
+                                                    value={item.id || ""}
+                                                    onChange={(e) => handleItemChange(index, e.target.value)}
+                                                    className="w-full px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                                                  >
+                                                    <option value="">Select Item</option>
+                                                    {itemList.map((product) => (
+                                                      <option key={product.id} value={product.id}>
+                                                        {product.item_name}
+                                                      </option>
+                                                    ))}
+                                                  </select>
+                                                </td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  {TYPE_LABELS[item.type] || item.type || "N/A"}
+                                                </td>
+                                                <td className="p-4">
+                                                  <input
+                                                    type="number"
+                                                    min="1"
+                                                    value={item.quantity}
+                                                    onChange={(e) => handleQuantityChange(index, e.target.value)}
+                                                    className="w-24 px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                                                  />
+                                                </td>
+                                                <td className="p-4">
+                                                <input
+                                                    type="number"
+                                                    step="0.01"
+                                                    min="0"
+                                                    value={item.unit_price}
+                                                    onChange={(e) => handleUnitPriceChange(index, e.target.value)}
+                                                    className="w-28 px-2 py-1 rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-sm"
+                                                />
+                                                </td>
+                                                <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
+                                                  ₱{Number(item.line_total).toFixed(2)}
+                                                </td>
                                                 <td className="p-4 text-sm text-slate-700 dark:text-slate-200">
                                                     <button 
                                                         type="button" 
@@ -560,12 +684,14 @@ function CreateInvoiceModal({ isOpen, onClose, onAddSales,itemList}) {
             <AddItemModal 
                 isOpen={isItemModalOpen} 
                 onClose={handleCloseItemModal} 
-                onAddItem={handleAddItem} 
+                onAddItem={handleAddLocalItem} 
                 loadItemList={itemList}
+                type="Item"
             />
             <AddCustomerModal
                 isOpen={isAddModalOpen} 
                 onClose={handleCloseCustomerModal} 
+                onCustomerAdded={fetchCustomers}
             />
         </>
     );

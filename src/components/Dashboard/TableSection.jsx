@@ -63,7 +63,7 @@ function TableSection({salesandweightdata, balanceData}) {
       -------------------------------- */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 p-6">
         <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">
-          Client and Supplier Balance
+          Sales and Purchased Order Balance
         </h3>
 
         <div className="h-[280px]">

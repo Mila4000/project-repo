@@ -193,9 +193,10 @@ function ReceivedItems() {
       const normalized = data.map(item => ({
         id: item.id,
         po_number: item.purchased_order.po,
-        purchased_orders_id: item.purchased_order_id,
+        purchased_order_id: item.purchased_order_id,
         product_name: item.product_name,
         supplier: item.purchased_order.supplier.businessname,
+        contact: item.purchased_order.supplier.contactno,
         transaction_date: item.purchased_order.transaction_date,
         delivery_status: item.purchased_order.delivery_status,
         expected_quantity: item.expected_quantity,
@@ -210,10 +211,12 @@ function ReceivedItems() {
   };
 
   useEffect(() => {
-    fetchItems();
-    fetchStats();
-  }, []);
-
+    if (!isEditModalOpen) {
+      console.log("The modal is refreshed");
+      fetchItems();
+      fetchStats();
+    }
+  }, [isEditModalOpen]);
 
   /* =========================
     ADD HANDLER
@@ -293,7 +296,7 @@ function ReceivedItems() {
     const end   = start + rowLimit;
     return filteredItems.slice(start, end);
   }, [filteredItems, rowLimit, currentPage]);
-    
+    console.log("Items", orders);
   return (
     <div>
       <ReceivedStatsGrid stats={stats} />

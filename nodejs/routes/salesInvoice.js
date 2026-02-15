@@ -6,7 +6,7 @@ const router = express.Router();
 router.get("/", salesInvoiceController.getSales);
 router.post("/", salesInvoiceController.addSalesInvoice);
 router.get("/stats",salesInvoiceController.getSalesStats);
-router.delete("/:si", salesInvoiceController.deleteSalesInvoice);
+router.post("/remove/:si", salesInvoiceController.removeSalesInvoice);
 router.patch(
   "/:id/uploads",
   salesInvoiceController.updateSalesFiles

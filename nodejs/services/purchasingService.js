@@ -30,7 +30,8 @@ export const getAllPurchases = async () => {
         discount
       )
     `)
-    .order("updated_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .eq("transaction_status", "Active");
 
   if (error) throw error;
   return data;
@@ -38,7 +39,6 @@ export const getAllPurchases = async () => {
 
 
 export const createPurchase = async (transaction) => {
-
   const {
     supplier,
     transaction_date,
@@ -135,10 +135,10 @@ export const createPurchase = async (transaction) => {
 };
 
 
-export const deletePurchase = async (po) => {
+export const removePurchase = async (po) => {
   const { error } = await supabase
     .from("purchased_order")
-    .delete()
+    .update({ transaction_status: "Removed" })
     .eq("po", po);
   if (error) throw error;
 };
@@ -148,14 +148,20 @@ export const getPurchaseStats = async () => {
   // 1️⃣ Fetch order-level stats
   const { data: orders, error: ordersError } = await supabase
     .from("purchased_order")
-    .select("id, total, payment_status, delivery_status");
+    .select("id, total, payment_status, delivery_status")
+    .eq("transaction_status", "Active");
 
   if (ordersError) throw ordersError;
 
   // 2️⃣ Fetch quantity from line items
   const { data: items, error: itemsError } = await supabase
     .from("purchased_order_item")
-    .select("purchased_order_id, quantity");
+    .select(`
+      purchased_order_id,
+      quantity,
+      purchased_order!inner(transaction_status)
+    `)
+    .eq("purchased_order.transaction_status", "Active");
 
   if (itemsError) throw itemsError;
   // 3️⃣ Aggregate quantities per order
@@ -195,6 +201,7 @@ export const updatePurchaseReceipt = async (purchaseId, receiptUrl) => {
     .from("purchased_order")
     .update({ receipt_url: receiptUrl })
     .eq("id", purchaseId)
+    .eq("transaction_status", "Active")
     .select()
     .single();
 
@@ -210,6 +217,7 @@ export const updateStatus = async (id, status) => {
     .from("purchased_order")
     .update({ approval_status: status, updated_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("transaction_status", "Active")
     .select()
     .single();
 

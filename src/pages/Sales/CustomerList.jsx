@@ -164,7 +164,7 @@ function CustomerList() {
     const [stats,setStats] = useState([]);
     const fetchCustomers = async () => {
       try {
-        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/customers`);
+        const res = await fetch('${import.meta.env.VITE_API_URL}/api/customers');
         const data = await res.json();
         setOrders(data);
       } catch (error) {
@@ -307,7 +307,6 @@ function CustomerList() {
         const startIndex = (currentPage - 1) * rowLimit;
         return filteredOrders.slice(startIndex, startIndex + rowLimit);
     }, [filteredOrders, rowLimit, currentPage]);
-
     return (
       <div>
           <CustomerListStatsGrid stats={stats}/>
@@ -352,6 +351,7 @@ function CustomerList() {
         <AddCustomerModal
           isOpen={isAddModalOpen} 
           onClose={() => setIsAddModalOpen(false)} 
+          onCustomerAdded={fetchCustomers}
         />
 
         <EditCustomerModal

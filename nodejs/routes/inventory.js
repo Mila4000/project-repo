@@ -1,11 +1,12 @@
-
 import express from "express";
-import * as inventoryCountingController from "../controllers/inventoryCountingController.js";
+import * as inventoryController from "../controllers/inventoryController.js";
 
 const router = express.Router();
 
-router.get("/", inventoryCountingController.getInventoryCounting);
-router.get("/stats", inventoryCountingController.getCountingStats);
-router.post("/", inventoryCountingController.addInventoryCounting);
+router.get("/", inventoryController.getinventory);
+router.get("/stats", inventoryController.getCountingStats);
+router.post("/", inventoryController.addinventory);
+router.get("/brands", inventoryController.getBrands);
+router.get("/brands/stats", inventoryController.getBrandStats);
 
 export default router;

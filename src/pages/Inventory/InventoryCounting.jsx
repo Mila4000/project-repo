@@ -64,36 +64,36 @@ function InventoryCounting() {
         className: 'w-4 h-4 text-slate-500 dark:text-slate-500',
     };
 
-    //BACKEND IMPLEMENTATION FOR FETCHING DATA FROM THE DATABASE (UNCOMMENT FOR BACKEND, COMMENT OUT FOR FRONTEND MOCKUP)
-    const [items,setItems]=useState([]);
-    const fetchInventoryItem = async () =>{
-        try {
-             const res = await fetch(`${import.meta.env.VITE_API_URL}/api/inventory`);
-            const data = await res.json();
-            setItems(data);
-        } catch (error) {
-            console.error("Failed to display items", error)
-        }
-    }
-    useEffect(()=>{
-        fetchInventoryItem();
-    },[])
+    // BACKEND IMPLEMENTATION FOR FETCHING DATA FROM THE DATABASE (UNCOMMENT FOR BACKEND, COMMENT OUT FOR FRONTEND MOCKUP)
+    // const [items,setItems]=useState([]);
+    // const fetchInventoryItem = async () =>{
+    //     try {
+    //          const res = await fetch(`${import.meta.env.VITE_API_URL}/api/inventory`);
+    //         const data = await res.json();
+    //         setItems(data);
+    //     } catch (error) {
+    //         console.error("Failed to display items", error)
+    //     }
+    // }
+    // useEffect(()=>{
+    //     fetchInventoryItem();
+    // },[])
 
 
     // --- DYNAMIC OPTION GENERATION (Explicitly uses ALL_OPTION) ---
 
-    // const extractUniqueOptions = (key, placeholder) => {
-    //     const uniqueValues = [...new Set(WarehouseData.map(order => order[key]))];
-    //     return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
-    // };
+    const extractUniqueOptions = (key, placeholder) => {
+        const uniqueValues = [...new Set(WarehouseData.map(order => order[key]))];
+        return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
+    };
 
     // ------------------------------------------------------------------------------------------- //
     //                |
     // UNCOMMENT THIS V AND COMMENT OUT THE ONE ABOVE FOR BACKEND IMPLEMENTATION. CURRENTLY SET FOR FRONTEND MOCKUP WITH WarehouseData.
-    const extractUniqueOptions = (key, placeholder) => {
-        const uniqueValues = [...new Set(items.map(order => order[key]))];
-        return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
-    };
+    // const extractUniqueOptions = (key, placeholder) => {
+    //     const uniqueValues = [...new Set(items.map(order => order[key]))];
+    //     return [placeholder, ALL_OPTION, ...uniqueValues.sort()];
+    // };
     // ------------------------------------------------------------------------------------------- //
 
     const rowLimitOptions = [5, 10, 15]; 
@@ -163,6 +163,7 @@ function InventoryCounting() {
     };
 
     const handleConfirmDelete = async () => {
+        // Logic for backend deletion would go here
         setIsDeleteModalOpen(false);
         setItemToDelete(null);
     };
@@ -171,8 +172,8 @@ function InventoryCounting() {
     // --- FILTERING LOGIC ---
     const filteredOrders = useMemo(() => {
         //                 vvvvvvvvvvvvv change this to "items" for BACKEND IMPLEMENTATION. Currently uses WarehouseData for FRONTEND MOCKUP.
-     //   let filtered = [...WarehouseData];
-      let filtered = [...items];
+        let filtered = [...WarehouseData];
+     // let filtered = [...items];
         
         // 1. Date Range Filter
         if (dateRangeFilter !== initialDateRange && dateRangeFilter !== ALL_OPTION) {
@@ -212,10 +213,10 @@ function InventoryCounting() {
         }
             
         return filtered;
-    // }, [WarehouseData,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
+    }, [WarehouseData,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
     //  ^^^^^^^^^^^^^
     //  | | | | | | |
-        }, [items,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
+    //, [items,dateRangeFilter, warehouseFilter, statusFilter, initialDateRange, initialWarehouse, initialStatus]); 
     // Use WarehouseData instead of items for FRONTEND MOCKUP. Switch to "items" for BACKEND IMPLEMENTATION.
 
     // --- Pagination Logic ---

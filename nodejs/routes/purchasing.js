@@ -56,6 +56,6 @@ router.patch(
 // ==============================
 // Core CRUD (LAST – dynamic param)
 // ==============================
-router.delete("/:po", purchasingController.deletePurchase);
+router.post("/remove/:po", purchasingController.removePurchase);
 
 export default router;

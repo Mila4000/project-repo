@@ -11,9 +11,18 @@ const COLORS = [
 ];
 
 function SalesChart({ salesTableData = [] }) {
-
   const data = useMemo(() => {
-    if (!salesTableData.length) return [];
+    // If no sales data at all
+    if (!salesTableData.length) {
+      return [
+        {
+          name: "No sales",
+          value: 1, // must be > 0 so Pie renders
+          color: "#e5e7eb",
+          isFallback: true,
+        },
+      ];
+    }
 
     const typeCountMap = salesTableData.reduce((acc, item) => {
       const type = item.type || "Unspecified";
@@ -21,12 +30,31 @@ function SalesChart({ salesTableData = [] }) {
       return acc;
     }, {});
 
-    return Object.entries(typeCountMap).map(([type, count], index) => ({
-      name: type,
-      value: count,
-      color: COLORS[index % COLORS.length],
-    }));
+    const mapped = Object.entries(typeCountMap).map(
+      ([type, count], index) => ({
+        name: type,
+        value: count,
+        color: COLORS[index % COLORS.length],
+        isFallback: false,
+      })
+    );
+
+    // Safety check if somehow empty
+    if (!mapped.length) {
+      return [
+        {
+          name: "No sales",
+          value: 1,
+          color: "#e5e7eb",
+          isFallback: true,
+        },
+      ];
+    }
+
+    return mapped;
   }, [salesTableData]);
+
+  const isNoSales = data.length === 1 && data[0].isFallback;
 
   return (
     <div className="bg-white dark:bg-slate-900 backdrop-blur-xl rounded-b-2xl p-6 border-slate-200/50 dark:border-slate-700/50">
@@ -56,15 +84,18 @@ function SalesChart({ salesTableData = [] }) {
               ))}
             </Pie>
 
-            <Tooltip
-              formatter={(value) => [`${value}`, "Count"]}
-              contentStyle={{
-                backgroundColor: "rgba(255, 255, 255, 0.95)",
-                border: "none",
-                borderRadius: "12px",
-                boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
-              }}
-            />
+            {/* Hide tooltip when no sales */}
+            {!isNoSales && (
+              <Tooltip
+                formatter={(value) => [`${value}`, "Count"]}
+                contentStyle={{
+                  backgroundColor: "rgba(255, 255, 255, 0.95)",
+                  border: "none",
+                  borderRadius: "12px",
+                  boxShadow: "0 10px 40px rgba(0, 0, 0, 0.1)",
+                }}
+              />
+            )}
           </PieChart>
         </ResponsiveContainer>
       </div>
@@ -81,8 +112,9 @@ function SalesChart({ salesTableData = [] }) {
                 {item.name}
               </span>
             </div>
+
             <div className="text-sm font-semibold text-slate-800 dark:text-white">
-              {item.value}
+              {isNoSales ? 0 : item.value}
             </div>
           </div>
         ))}

@@ -7,6 +7,8 @@ function ReceivedItemsTable({ orders, onView, onViewReceipt, onDelete }) {
         switch (Status) {
             case "Delivered":
                 return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+            case "Received":
+                return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
             case "Out for Delivery":
                 return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
             case "Order Placed":
@@ -34,7 +36,6 @@ function ReceivedItemsTable({ orders, onView, onViewReceipt, onDelete }) {
                 </thead>
                 <tbody>
                   {orders
-                .filter(order => order.delivery_status !== "Out for Delivery")
                 .map((order) => {
                     return (
                       <tr key={order.id} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">

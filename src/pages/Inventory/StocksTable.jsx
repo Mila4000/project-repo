@@ -1,29 +1,28 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Eye, Trash2 } from 'lucide-react'; 
 import CustomWarehouseSelect from '../../components/filter/CustomSupplierSelect'; 
-import CustomStatusSelect from '../../components/filter/CustomDeliveryStatusSelect'; 
+import CustomStatusSelect from '../../components/filter/CustomDeliveryStatusSelect';
 
 const StocksData = [
-    { Warehouse: 'Saog', ItemName: 'Jowls', ItemCode: 'M-JWLS-UNP', Quantity: '50.00', UnitPrice: '220.00', TotalValue: '11,000.00', Status: 'In Stock' },
-    { Warehouse: 'Saog', ItemName: 'Jowls', ItemCode: 'M-JWLS-VIP', Quantity: '50.00', UnitPrice: '215.00', TotalValue: '10,750.00', Status: 'In Stock' },
-    { Warehouse: 'Quezon City', ItemName: 'Premium Beef', ItemCode: 'M-PRBF-UNP', Quantity: '10.15', UnitPrice: '465.00', TotalValue: '4719.00', Status: 'Need Restock' },
-    { Warehouse: 'Meycuayan', ItemName: 'Chicken', ItemCode: 'M-CHCK-VAC', Quantity: '5.17', UnitPrice: '240.00', TotalValue: '1240.80', Status: 'Critical Stock' },
-    { Warehouse: "Makati", ItemName: "Salmon Fillet", ItemCode: "S-SF-SKN", Quantity: "63.41", UnitPrice: "692.51", TotalValue: "43,912.06", Status: "Need Restock" },
-    { Warehouse: "Makati", ItemName: "Tenderloin", ItemCode: "B-TL-VAC", Quantity: "147.55", UnitPrice: "349.90", TotalValue: "51,627.75", Status: "Need Restock" },
-    { Warehouse: "Makati", ItemName: "Shrimp", ItemCode: "SE-SHR-FRO", Quantity: "75.40", UnitPrice: "416.33", TotalValue: "31,391.28", Status: "In Stock" },
-    { Warehouse: "Bocaue", ItemName: "Ground Beef", ItemCode: "B-GB-STD", Quantity: "38.80", UnitPrice: "877.37", TotalValue: "34,041.96", Status: "Need Restock" },
-    { Warehouse: "Quezon City", ItemName: "Ground Beef", ItemCode: "B-GB-STD", Quantity: "58.51", UnitPrice: "755.91", TotalValue: "44,228.29", Status: "Need Restock" },
-    { Warehouse: "Meycuayan", ItemName: "Lamb Leg", ItemCode: "L-LL-WHL", Quantity: "31.07", UnitPrice: "664.63", TotalValue: "20,650.05", Status: "In Stock" },
-    { Warehouse: "Bocaue", ItemName: "Lamb Leg", ItemCode: "L-LL-WHL", Quantity: "97.54", UnitPrice: "420.47", TotalValue: "41,012.64", Status: "Need Restock" },
-    { Warehouse: "Saog", ItemName: "Salmon Fillet", ItemCode: "S-SF-SKN", Quantity: "124.68", UnitPrice: "899.12", TotalValue: "112,102.28", Status: "In Stock" },
-    { Warehouse: "Bocaue", ItemName: "Salmon Fillet", ItemCode: "S-SF-SKN", Quantity: "97.09", UnitPrice: "875.57", TotalValue: "85,009.09", Status: "Need Restock" },
-    { Warehouse: "Saog", ItemName: "Ground Beef", ItemCode: "B-GB-STD", Quantity: "94.94", UnitPrice: "467.28", TotalValue: "44,363.56", Status: "In Stock" },
-    { Warehouse: "Meycuayan", ItemName: "Ground Beef", ItemCode: "B-GB-STD", Quantity: "139.57", UnitPrice: "802.06", TotalValue: "111,943.51", Status: "Need Restock" }
+    { warehouse_name: 'Saog', item_name: 'Jowls', item_code: 'M-JWLS-UNP', quantity: '50.00', suggested_retail_price: '220.00', status: 'In Stock' },
+    { warehouse_name: 'Saog', item_name: 'Jowls', item_code: 'M-JWLS-VIP', quantity: '50.00', suggested_retail_price: '215.00', status: 'In Stock' },
+    { warehouse_name: 'Quezon City', item_name: 'Premium Beef', item_code: 'M-PRBF-UNP', quantity: '10.15', suggested_retail_price: '465.00', status: 'Need Restock' },
+    { warehouse_name: 'Meycuayan', item_name: 'Chicken', item_code: 'M-CHCK-VAC', quantity: '5.17', suggested_retail_price: '240.00', status: 'Critical Stock' },
+    { warehouse_name: "Makati", item_name: "Salmon Fillet", item_code: "S-SF-SKN", quantity: "63.41", suggested_retail_price: "692.51", status: "Need Restock" },
+    { warehouse_name: "Makati", item_name: "Tenderloin", item_code: "B-TL-VAC", quantity: "147.55", suggested_retail_price: "349.90", status: "Need Restock" },
+    { warehouse_name: "Makati", item_name: "Shrimp", item_code: "SE-SHR-FRO", quantity: "75.40", suggested_retail_price: "416.33", status: "In Stock" },
+    { warehouse_name: "Bocaue", item_name: "Ground Beef", item_code: "B-GB-STD", quantity: "38.80", suggested_retail_price: "877.37", status: "Need Restock" },
+    { warehouse_name: "Quezon City", item_name: "Ground Beef", item_code: "B-GB-STD", quantity: "58.51", suggested_retail_price: "755.91", status:"Need Restock" },
+    { warehouse_name: "Meycuayan", item_name: "Lamb Leg", item_code: "L-LL-WHL", quantity: "31.07", suggested_retail_price: "664.63", status: "In Stock" },
+    { warehouse_name: "Bocaue", item_name: "Lamb Leg", item_code: "L-LL-WHL", quantity: "97.54", suggested_retail_price: "420.47", status: "Need Restock" },
+    { warehouse_name:"Saog" ,item_name:"Salmon Fillet" ,item_code:"S-SF-SKN" ,quantity:"97.09" ,suggested_retail_price:"875.57" ,status:"Need Restock"},
+    { warehouse_name:"Saog" ,item_name:"Ground Beef" ,item_code:"B-GB-STD" ,quantity:"94.94" ,suggested_retail_price:"467.28",status:"In Stock"},
+    { warehouse_name:"Meycuayan" ,item_name:"Ground Beef" ,item_code:"B-GB-STD" ,quantity:"139.57" ,suggested_retail_price:"802.06", status:"Need Restock"}
 ];
 
 const ALL_OPTION = 'All';
 
-function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, iconProps,onAddProductClose }) {
+function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductClick, onEditStockClick, iconProps, onDeleteClick, onAddProductClose}) {
     // These values match the first item in the options array below
     const [warehouseFilter, setWarehouseFilter] = useState('warehouse');
     const [statusFilter, setStatusFilter] = useState('status');
@@ -41,6 +40,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
             quantity: item.quantity,
             threshold_count: item.threshold_count,
             suggested_retail_price: item.suggested_retail_price,
+            selling_price:item.selling_price,
             status: item.status,
             item_code: item.item_code,
 
@@ -60,30 +60,69 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
         };
 
     
-      useEffect(() => {
-    if (!onAddProductClose) {
-        fetchItems();
-    }
+    useEffect(() => {
+        if (!onAddProductClose) {
+            fetchItems();
+        }
     }, [onAddProductClose]);
+
+    console.log("Items",items);
     // 1. Extract Options (Strings only to match your CustomSelect components)
-    const warehouseOptions = useMemo(() => {
-        const unique = [...new Set(items.map(item => item.warehouse))];
-        return ['warehouse', ALL_OPTION, ...unique.sort()];
-    }, []);
+
+    // ------------------------------------------------------------------------------------------- //
+
+        // uncomment this for the backend data fetching above to work
+
+        const warehouseOptions = useMemo(() => {
+            const unique = [...new Set(items.map(item => item.warehouse))];
+            return ['warehouse', ALL_OPTION, ...unique.sort()];
+        }, []);
+
+    // ------------------------------------------------------------------------------------------- //
+
+    //comment this for the backend data fetching above to work
+    // const warehouseOptions = useMemo(() => {
+    //     const unique = [...new Set(StocksData.map(item => item.warehouse))];
+    //     return ['warehouse', ALL_OPTION, ...unique.sort()];
+    // }, []);
+
+    // const statusOptions = useMemo(() => {
+    //     const unique = [...new Set(StocksData.map(item => item.status))];
+    //     return ['status', ALL_OPTION, ...unique.sort()];
+    // }, []);
+
+// ------------------------------------------------------------------------------------------- //
+    // uncomment this for the backend data fetching above to work
 
     const statusOptions = useMemo(() => {
         const unique = [...new Set(items.map(item => item.status))];
         return ['status', ALL_OPTION, ...unique.sort()];
     }, []);
+// ------------------------------------------------------------------------------------------- //
 
     // 2. Filter Logic
+    // const filteredData = useMemo(() => {
+    //     return StocksData.filter(item => {
+    //         const matchW = warehouseFilter === 'warehouse' || warehouseFilter === ALL_OPTION || item.warehouse === warehouseFilter;
+    //         const matchS = statusFilter === 'status' || statusFilter === ALL_OPTION || item.status === statusFilter;
+    //         return matchW && matchS;
+    //     });
+    // }, [StocksData,warehouseFilter, statusFilter]);
+
+    // ------------------------------------------------------------------------------------------- //
+    // THIS IS FOR THE BACKEND DATA FETCHING
+
     const filteredData = useMemo(() => {
         return items.filter(item => {
-            const matchW = warehouseFilter === 'warehouse' || warehouseFilter === ALL_OPTION || item.warehouse === warehouseFilter;
+            const matchW = warehouseFilter === 'warehouse' || warehouseFilter === ALL_OPTION || item.warehouse_name === warehouseFilter;
             const matchS = statusFilter === 'status' || statusFilter === ALL_OPTION || item.status === statusFilter;
             return matchW && matchS;
         });
     }, [items,warehouseFilter, statusFilter]);
+
+    // ------------------------------------------------------------------------------------------- //
+
+
 
     // 3. Update Parent with new total count for Pagination
     useEffect(() => {
@@ -95,20 +134,27 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
         const start = (currentPage - 1) * rowLimit;
         return filteredData.slice(start, start + rowLimit);
     }, [filteredData, rowLimit, currentPage]);
-    const handleDeletePurchase = async (id) => {
-        if (!confirm("Delete this stock?")) return;
-        try {
-            const res = await fetch(
-            `${import.meta.env.VITE_API_URL}/api/stock/${id}`,
-            { method: "DELETE" }
-            );
 
-            if (!res.ok) throw new Error("Delete failed");
-            fetchItems();
-        } catch (err) {
-            console.error(err);
-        }
-    };
+    // ------------------------------------------------------------------------------------------ //
+
+    //  I MOVED THIS DELETE FUNCTION TO StockManagement.jsx TO HANDLE THE MODAL THERE
+    
+    // const handleDeletePurchase = async (id) => {
+    //     if (!confirm("Delete this stock?")) return;
+    //     try {
+    //         const res = await fetch(
+    //         `${import.meta.env.VITE_API_URL}/api/stock/${id}`,
+    //         { method: "DELETE" }
+    //         );
+
+    //         if (!res.ok) throw new Error("Delete failed");
+    //         fetchItems();
+    //     } catch (err) {
+    //         console.error(err);
+    //     }
+    // };
+
+    // ------------------------------------------------------------------------------------------ //
     const getStatusColor = (status) => {
         switch (status) {
             case "In Stock": return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
@@ -152,12 +198,13 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Item Code</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Qty (KG)</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Unit Price</th>
+                        <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Selling Price</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Total Value</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200 text-center">Status</th>
                         <th className="p-4 text-sm font-semibold text-slate-600 dark:text-slate-200">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                 <tbody>
                     {paginatedData.length > 0 ? (
                         paginatedData.map((item, index) => (
                             <tr key={`${item.id}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
@@ -166,6 +213,7 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                                 <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.item_code}</td>
                                 <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity}</td>
                                 <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.suggested_retail_price}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.selling_price}</td>
                                 <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity * item.suggested_retail_price}</td>
 
                                 <td className="p-4 text-center">
@@ -187,12 +235,52 @@ function StocksTable({ rowLimit, currentPage, onTotalDataChange, onAddProductCli
                         ))
                     ) : (
                         <tr>
-                            <td colSpan="6" className="p-8 text-center text-slate-500 dark:text-slate-400 italic">
+                            <td colSpan="8" className="p-8 text-center text-slate-500 dark:text-slate-400 italic">
                                 No stocks found matching the filters.
                             </td>
                         </tr>
                     )}
                 </tbody>
+
+                {/* <tbody>
+                    {paginatedData.length > 0 ? (
+                        paginatedData.map((item, index) => (
+                            <tr key={`${item.id}`} className="border-b border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-colors">
+                                <td className="p-4 text-sm font-medium text-blue-500">{item.warehouse_name}</td>
+                                <td className="p-4 text-sm text-slate-800 dark:text-white">{item.item_name}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.item_code}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.suggested_retail_price}</td>
+                                <td className="p-4 text-sm text-center text-slate-800 dark:text-white">{item.quantity * item.suggested_retail_price}</td>
+
+                                <td className="p-4 text-center">
+                                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${getStatusColor(item.status)}`}>
+                                        {item.status}
+                                    </span>
+                                </td>
+                                <td className="p-4 flex items-center gap-3"> 
+                                    <span className="text-sm text-blue-800 dark:text-blue-400 cursor-pointer"
+                                        //onClick={() => onEdit(order)}
+                                        onClick={() => onEditStockClick(item)}
+                                    >
+                                        <Eye className="w-4 h-4"/>
+                                    </span>
+                                    <span className="text-sm text-red-800 dark:text-red-400 cursor-pointer" 
+                                        onClick={() => onDeleteClick(item, index)}
+                                    >
+                                        <Trash2 className="w-4 h-4"/>
+                                    </span>
+                                </td>
+                            </tr>
+                        ))
+                    ) : (
+                        <tr>
+                            <td colSpan="8" className="p-8 text-center text-slate-500 dark:text-slate-400 italic">
+                                No stocks found matching the filters.
+                            </td>
+                        </tr>
+                    )}
+                </tbody> */}
             </table>
         </div>
     );

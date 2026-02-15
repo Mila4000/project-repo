@@ -9,7 +9,7 @@ const CustomerTypeOptions = [
     { customerType: 'Unpack' }
 ];
 
-function AddCustomerModal({ isOpen, onClose }) {
+function AddCustomerModal({ isOpen, onClose, onCustomerAdded }) {
     if (!isOpen) return null;
 
     const [formValues, setFormValues] = useState({
@@ -77,6 +77,7 @@ function AddCustomerModal({ isOpen, onClose }) {
         facebook_name: '',
         cus_type: '',
         });
+        await onCustomerAdded();
         onClose();
     };
 

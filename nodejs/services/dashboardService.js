@@ -32,12 +32,14 @@ export const getDashboardStats = async () => {
     await supabase.from("sales_invoice")
     .select("total")
     .eq("payment_status", "Paid")
+    .eq("transaction_status","Active")
     .gte("transaction_date", startOfCurrentMonth);
   if (currentSalesError) throw currentSalesError;
   const { data: prevSales, error: prevSalesError } =
     await supabase.from("sales_invoice")
     .select("total")
     .eq("payment_status", "Paid")
+    .eq("transaction_status","Active")
     .gte("transaction_date", startOfPrevMonth)
     .lt("transaction_date", startOfCurrentMonth);
   if (prevSalesError) throw prevSalesError;
@@ -63,11 +65,13 @@ export const getDashboardStats = async () => {
   const { data: currentReceivables, error: currentReceivablesError } =
     await supabase.from("sales_invoice")
     .select("total")
+    .eq("transaction_status","Active")    
     .gte("transaction_date", startOfCurrentMonth);
   if (currentReceivablesError) throw currentReceivablesError;
   const { data: prevReceivables, error: prevReceivablesError } =
     await supabase.from("sales_invoice")
     .select("total")
+    .eq("transaction_status","Active")
     .gte("transaction_date", startOfPrevMonth)
     .lt("transaction_date", startOfCurrentMonth);
   if (prevReceivablesError) throw prevReceivablesError;
@@ -82,12 +86,14 @@ export const getDashboardStats = async () => {
     await supabase.from("purchased_order")
     .select("total")
     .eq("payment_status", "Unpaid")
+    .eq("transaction_status","Active")
     .gte("transaction_date", startOfCurrentMonth);
   if (currentPayablesError) throw currentPayablesError;
   const { data: prevPayables, error: prevPayablesError } =
     await supabase.from("purchased_order")
     .select("total")
     .eq("payment_status", "Unpaid")
+    .eq("transaction_status","Active")
     .gte("transaction_date", startOfPrevMonth)
     .lt("transaction_date", startOfCurrentMonth);
   if (prevPayablesError) throw prevPayablesError;
@@ -156,11 +162,13 @@ export const getDashboardStats = async () => {
 };
 
 export const getSalesTable = async () => {
-const { data, error } = await supabase
+  const { data, error } = await supabase
     .from("sales_invoice_item")
     .select(`
-      *
+      *,
+      sales_invoice!inner(transaction_status)
     `)
+    .eq("sales_invoice.transaction_status", "Active")
     .order("id", { ascending: false });
 
   if (error) throw error;
@@ -170,19 +178,15 @@ const { data, error } = await supabase
 export const getMonthlySalesExpenses = async () => {
   const { data, error } = await supabase
     .from("monthly_sales_expenses")
-    .select(`
-      month,
-      sales,
-      expenses
-    `);
+    .select("month, month_date, revenue, cogs, profit")
+    .order("month_date", { ascending: true });
 
   if (error) throw error;
-
   return data;
 };
-export const getClientSupplierBalance = async () => {
+export const getSalesPurchaseCounts = async () => {
   const { data, error } = await supabase
-    .rpc("get_client_supplier_balance");
+    .rpc("get_sales_purchase_counts");
 
   if (error) throw error;
   return data;
