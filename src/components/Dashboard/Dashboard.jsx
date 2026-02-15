@@ -35,7 +35,7 @@ function Dashboard() {
 
   const fetchSalesWeightChart = async () => {
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/dashboard/sales-weight-chart');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/sales-weight-chart`);
 
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
@@ -48,7 +48,7 @@ function Dashboard() {
   };
   const getRevenueChartData = async () => {
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/dashboard');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard`);
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
       }
@@ -60,7 +60,7 @@ function Dashboard() {
   };
   const getSalesPurchaseCounts = async () => {
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/dashboard/sales-purchase-counts-chart');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/sales-purchase-counts-chart`);
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
       }
@@ -74,7 +74,7 @@ function Dashboard() {
   };
   const getInventoryStatus = async () => {
     try {
-      const res = await fetch('${import.meta.env.VITE_API_URL}/api/dashboard/inventory-status');
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/dashboard/inventory-status`);
       if (!res.ok) {
         throw new Error(`HTTP error: ${res.status}`);
       }

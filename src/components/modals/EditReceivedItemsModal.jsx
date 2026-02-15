@@ -48,7 +48,7 @@ function EditReceivedItemsModal({ isOpen, onClose, itemData, onSave }) {
    const handleDeliver = async () => {
         try {
             const res = await fetch(
-            `http://localhost:5000/api/received-items/${formData.purchased_order_id}/deliver`,
+            `${import.meta.env.VITE_API_URL}/api/received-items/${formData.purchased_order_id}/deliver`,
             { method: 'PUT' }
             );
 

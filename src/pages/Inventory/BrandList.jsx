@@ -17,7 +17,7 @@ function BrandList() {
     const [stats,setStats] = useState([]);
     const fetchBrands = async () => {
       try {
-        const res = await fetch('${import.meta.env.VITE_API_URL}/api/inventory/brands');
+        const res = await fetch(`${import.meta.env.VITE_API_URL}/api/inventory/brands`);
         const data = await res.json();
 
         setOrders(data);
