@@ -296,7 +296,6 @@ function ReceivedItems() {
     const end   = start + rowLimit;
     return filteredItems.slice(start, end);
   }, [filteredItems, rowLimit, currentPage]);
-    console.log("Items", orders);
   return (
     <div>
       <ReceivedStatsGrid stats={stats} />
